@@ -1038,9 +1038,12 @@ function getQContent(q, role){
 
 /* ===== CONFIG · 修改这里接入后端 ===== */
 const CONFIG = {
-  // 本地开发：'http://localhost:3000'
-  // 生产环境：替换为你的阿里云 FC / 内网服务地址
-  API_BASE: ''  // 留空 = 纯本地 localStorage 模式
+  // 自动检测：localhost 时走同源 API（server.js 同时跑前后端）
+  // 生产部署时改为你的后端地址，如 'https://your-api.example.com'
+  API_BASE: (typeof location !== 'undefined' &&
+    (location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
+    ? 'http://localhost:3000'
+    : ''
 };
 
 /* ===== API 层 · 失败自动降级到 localStorage ===== */
@@ -1155,13 +1158,16 @@ let state = {
     el.onclick = ()=> { go('gallery'); setTimeout(()=>{ const t=document.querySelector(`[data-section="${el.dataset.level}"]`); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); },100); };
   });
 
-  // BU 卷王榜
-  $('buScroll').innerHTML = BUS.map(b=>`
-    <div class="bu-card">
-      <div class="bu-rank">${b.rank}</div>
-      <div class="bu-name">${b.name}</div>
-      <div class="bu-desc">${b.desc}</div>
-    </div>`).join('');
+  // BU 卷王榜（已在 v9 隐藏，保留数据备用）
+  // $('buScroll') 元素不存在时跳过，避免报错导致后续绑定失效
+  if($('buScroll')) {
+    $('buScroll').innerHTML = BUS.map(b=>`
+      <div class="bu-card">
+        <div class="bu-rank">${b.rank}</div>
+        <div class="bu-name">${b.name}</div>
+        <div class="bu-desc">${b.desc}</div>
+      </div>`).join('');
+  }
 
   const hot = [...PERSONAS].sort((a,b)=>parseFloat(a.rare)-parseFloat(b.rare)).slice(0,3);
   $('hotScroll').innerHTML = hot.map(p=>`

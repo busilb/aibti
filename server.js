@@ -245,6 +245,26 @@ const server = http.createServer(async (req, res) => {
     return res.end(adminHTML(stats, data.results));
   }
 
+  // 静态文件服务（前端 index.html + image/ 目录）
+  const staticMap = { '.png':'image/png', '.jpg':'image/jpeg', '.html':'text/html; charset=utf-8',
+    '.js':'application/javascript', '.css':'text/css', '.json':'application/json', '.svg':'image/svg+xml' };
+
+  let filePath;
+  if (path_ === '/' || path_ === '/index.html') {
+    filePath = path.join(__dirname, 'index.html');
+  } else if (path_.startsWith('/image/')) {
+    filePath = path.join(__dirname, path_);
+  } else {
+    filePath = null;
+  }
+
+  if (filePath && fs.existsSync(filePath)) {
+    const ext = path.extname(filePath);
+    const mime = staticMap[ext] || 'application/octet-stream';
+    res.writeHead(200, { 'Content-Type': mime });
+    return fs.createReadStream(filePath).pipe(res);
+  }
+
   // 404
   json(res, { error: 'Not Found' }, 404);
 });
