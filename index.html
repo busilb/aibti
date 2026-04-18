@@ -1535,235 +1535,248 @@ $('btnCopyShareText').onclick = ()=> $('btnShare').click();
 /* ===== Canvas 海报生成器 ===== */
 async function generatePoster(r) {
   const {p, scores, role, lv} = r;
-  const W = 750, H = 1280;
+  // 2x 分辨率，保证手机截图清晰
+  const W = 750, H = 1060, DPR = 2;
   const canvas = document.createElement('canvas');
-  canvas.width = W; canvas.height = H;
+  canvas.width = W * DPR; canvas.height = H * DPR;
   const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR); // 2x 清晰度，后续所有坐标用逻辑像素
 
-  // ── 背景 ──
-  const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-  bgGrad.addColorStop(0, '#1a0a2e');
-  bgGrad.addColorStop(0.5, '#0d0015');
-  bgGrad.addColorStop(1, '#080010');
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, W, H);
+  const CX = W / 2;
+  const FONT = '-apple-system,"PingFang SC","Hiragino Sans GB",sans-serif';
+  const MONO = 'ui-monospace,Menlo,monospace';
 
-  // 背景光球
+  // ── 通用工具 ──
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+  function hGrad(x1, x2, ...stops) { // stops: [pos, color, ...]
+    const g = ctx.createLinearGradient(x1, 0, x2, 0);
+    for(let i=0; i<stops.length; i+=2) g.addColorStop(stops[i], stops[i+1]);
+    return g;
+  }
   function radialGlow(x, y, r, color) {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
     g.addColorStop(0, color); g.addColorStop(1, 'transparent');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   }
-  radialGlow(W * 0.85, H * 0.1, 350, 'rgba(168,85,247,.18)');
-  radialGlow(W * 0.1, H * 0.85, 300, 'rgba(6,182,212,.14)');
-  radialGlow(W * 0.5, H * 0.5, 400, 'rgba(236,72,153,.08)');
+  // 文字自动换行，返回实际行数
+  function drawWrappedText(text, x, y, maxW, lineH, maxLines=3) {
+    const chars = [...text];
+    let line = '', lines = [];
+    for(const ch of chars) {
+      const test = line + ch;
+      if(ctx.measureText(test).width > maxW && line) {
+        lines.push(line); line = ch;
+        if(lines.length >= maxLines) { lines[maxLines-1] += '...'; break; }
+      } else line = test;
+    }
+    if(lines.length < maxLines && line) lines.push(line);
+    lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineH));
+    return lines.length;
+  }
 
-  // ── 品牌标题 ──
+  // ══════════════════════════════
+  //  § 1  背景
+  // ══════════════════════════════
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#1c0a30'); bg.addColorStop(0.5, '#0d0018'); bg.addColorStop(1, '#09000f');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  radialGlow(W*0.82, H*0.12, 320, 'rgba(168,85,247,.22)');
+  radialGlow(W*0.18, H*0.88, 280, 'rgba(6,182,212,.16)');
+
+  // ══════════════════════════════
+  //  § 2  顶部品牌 (y=0~88)
+  // ══════════════════════════════
   ctx.save();
-  ctx.font = '600 26px ui-monospace,Menlo,monospace';
-  ctx.textAlign = 'center';
-  ctx.letterSpacing = '8px';
-  const brandGrad = ctx.createLinearGradient(W/2-120, 0, W/2+120, 0);
-  brandGrad.addColorStop(0, '#a855f7');
-  brandGrad.addColorStop(0.5, '#ec4899');
-  brandGrad.addColorStop(1, '#06b6d4');
-  ctx.fillStyle = brandGrad;
-  ctx.fillText('A · I · B · T · I', W/2, 72);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `700 20px ${MONO}`;
+  ctx.fillStyle = hGrad(CX-90, CX+90, 0,'#a855f7', 0.5,'#ec4899', 1,'#06b6d4');
+  ctx.fillText('A · I · B · T · I', CX, 36);
+  ctx.font = `400 15px ${FONT}`;
+  ctx.fillStyle = 'rgba(180,176,200,.55)';
+  ctx.fillText('你是哪种 AI 打工人', CX, 62);
   ctx.restore();
 
+  // 顶部分割线
   ctx.save();
-  ctx.font = '500 24px -apple-system,PingFang SC,sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(180,176,200,0.6)';
-  ctx.fillText('你是哪种 AI 打工人', W/2, 108);
+  ctx.strokeStyle = hGrad(60, W-60, 0,'transparent', 0.3,'rgba(168,85,247,.5)', 0.7,'rgba(236,72,153,.5)', 1,'transparent');
+  ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(60, 80); ctx.lineTo(W-60, 80); ctx.stroke();
   ctx.restore();
 
-  // ── 分割线 ──
-  ctx.save();
-  const lineGrad = ctx.createLinearGradient(80, 0, W-80, 0);
-  lineGrad.addColorStop(0, 'transparent');
-  lineGrad.addColorStop(0.3, 'rgba(168,85,247,.5)');
-  lineGrad.addColorStop(0.7, 'rgba(236,72,153,.5)');
-  lineGrad.addColorStop(1, 'transparent');
-  ctx.strokeStyle = lineGrad;
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(80, 128); ctx.lineTo(W-80, 128); ctx.stroke();
-  ctx.restore();
+  // ══════════════════════════════
+  //  § 3  头像 (中心 y=218, r=100)
+  // ══════════════════════════════
+  const AC = { x: CX, y: 218, r: 100 };
 
-  // ── 头像 ──
-  const avatarCX = W/2, avatarCY = 310, avatarR = 145;
-  // 发光圆环
-  [[avatarR+18, 'rgba(168,85,247,.5)'], [avatarR+10, 'rgba(236,72,153,.35)'], [avatarR+4, 'rgba(6,182,212,.2)']].forEach(([r2, c]) => {
-    ctx.save();
-    ctx.beginPath(); ctx.arc(avatarCX, avatarCY, r2, 0, Math.PI*2);
-    ctx.strokeStyle = c; ctx.lineWidth = 2.5; ctx.stroke();
-    ctx.restore();
+  // 发光圆环（从外到内）
+  [ [AC.r+16, 'rgba(168,85,247,.45)'],
+    [AC.r+9,  'rgba(236,72,153,.30)'],
+    [AC.r+3,  'rgba(6,182,212,.18)'] ].forEach(([rr, c]) => {
+    ctx.save(); ctx.beginPath(); ctx.arc(AC.x, AC.y, rr, 0, Math.PI*2);
+    ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
   });
-  // 头像图片
+
+  // 头像图片（圆形裁剪）
   ctx.save();
-  ctx.beginPath(); ctx.arc(avatarCX, avatarCY, avatarR, 0, Math.PI*2); ctx.clip();
+  ctx.beginPath(); ctx.arc(AC.x, AC.y, AC.r, 0, Math.PI*2); ctx.clip();
   try {
     const img = await new Promise((res, rej) => {
       const i = new Image(); i.crossOrigin = 'anonymous';
       i.onload = () => res(i); i.onerror = rej;
       i.src = `/image/${p.code}.png`;
     });
-    ctx.drawImage(img, avatarCX-avatarR, avatarCY-avatarR, avatarR*2, avatarR*2);
+    ctx.drawImage(img, AC.x-AC.r, AC.y-AC.r, AC.r*2, AC.r*2);
   } catch {
-    // SVG fallback：彩色渐变圆
-    const fb = ctx.createRadialGradient(avatarCX, avatarCY, 0, avatarCX, avatarCY, avatarR);
-    fb.addColorStop(0, lv.color + 'cc'); fb.addColorStop(1, '#1a0a2e');
-    ctx.fillStyle = fb; ctx.fillRect(avatarCX-avatarR, avatarCY-avatarR, avatarR*2, avatarR*2);
-    ctx.font = 'bold 80px ui-monospace'; ctx.textAlign = 'center';
-    ctx.fillStyle = '#fff'; ctx.fillText(p.level, avatarCX, avatarCY+28);
+    const fb = ctx.createRadialGradient(AC.x, AC.y, 0, AC.x, AC.y, AC.r);
+    fb.addColorStop(0, lv.color + 'dd'); fb.addColorStop(1, '#1a0a2e');
+    ctx.fillStyle = fb; ctx.fill();
+    ctx.font = `800 52px ${MONO}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillText(p.level, AC.x, AC.y);
   }
   ctx.restore();
-  // 等级徽章（右下角）
-  const badgeCX = avatarCX + avatarR - 20, badgeCY = avatarCY + avatarR - 20;
+
+  // 等级徽章（右下角圆点）
+  const BD = { x: AC.x + AC.r - 14, y: AC.y + AC.r - 14, r: 24 };
   ctx.save();
-  ctx.beginPath(); ctx.arc(badgeCX, badgeCY, 32, 0, Math.PI*2);
+  ctx.beginPath(); ctx.arc(BD.x, BD.y, BD.r, 0, Math.PI*2);
   ctx.fillStyle = lv.color; ctx.fill();
-  ctx.strokeStyle = '#0d0015'; ctx.lineWidth = 4; ctx.stroke();
-  ctx.font = 'bold 20px ui-monospace'; ctx.textAlign = 'center';
-  ctx.fillStyle = '#fff'; ctx.fillText(p.level, badgeCX, badgeCY+7);
+  ctx.strokeStyle = '#0d0018'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.font = `800 15px ${MONO}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#fff'; ctx.fillText(p.level, BD.x, BD.y);
   ctx.restore();
 
-  // ── 人格名（渐变大字） ──
+  // ══════════════════════════════
+  //  § 4  人格名 (y=360)
+  //  头像底部: 218+100+16=334 → 名字从 y=360 开始，留 26px 间距
+  // ══════════════════════════════
   const fullName = `${role.name}${p.name}`;
+  const nameFZ = fullName.length <= 5 ? 58 : fullName.length <= 7 ? 52 : 46;
   ctx.save();
-  ctx.font = `900 ${fullName.length > 6 ? 68 : 80}px -apple-system,PingFang SC,sans-serif`;
-  ctx.textAlign = 'center';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `900 ${nameFZ}px ${FONT}`;
   const tw = ctx.measureText(fullName).width;
-  const nameGrad = ctx.createLinearGradient(W/2-tw/2, 0, W/2+tw/2, 0);
-  nameGrad.addColorStop(0, '#a855f7');
-  nameGrad.addColorStop(0.5, '#ec4899');
-  nameGrad.addColorStop(1, '#06b6d4');
-  ctx.fillStyle = nameGrad;
-  ctx.fillText(fullName, W/2, 530);
+  ctx.fillStyle = hGrad(CX-tw/2-10, CX+tw/2+10, 0,'#a855f7', 0.5,'#ec4899', 1,'#06b6d4');
+  ctx.fillText(fullName, CX, 370);
   ctx.restore();
 
-  // ── Slogan ──
+  // ── Slogan (y=406) ──
   ctx.save();
-  ctx.font = 'italic 500 30px -apple-system,PingFang SC,sans-serif';
-  ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(180,176,200,.85)';
-  ctx.fillText(`"${p.slogan}"`, W/2, 580);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `italic 500 22px ${FONT}`;
+  ctx.fillStyle = 'rgba(180,176,200,.8)';
+  ctx.fillText(`"${p.slogan}"`, CX, 408);
   ctx.restore();
 
-  // ── 等级信息 chip ──
+  // ── 等级 Chip (y=428~464) ──
+  const chipText = `${p.level}  ·  ${lv.name}  ·  稀有度 ${p.rare}`;
   ctx.save();
-  const chipText = `${p.level} · ${lv.name} · 稀有度 ${p.rare}`;
-  ctx.font = '500 22px ui-monospace,Menlo,monospace';
+  ctx.font = `500 16px ${MONO}`;
   ctx.textAlign = 'center';
-  const chipW = ctx.measureText(chipText).width + 48;
-  const chipX = W/2 - chipW/2, chipY = 608;
-  ctx.beginPath();
-  ctx.roundRect(chipX, chipY, chipW, 40, 20);
-  ctx.fillStyle = 'rgba(168,85,247,.15)'; ctx.fill();
-  ctx.strokeStyle = 'rgba(168,85,247,.4)'; ctx.lineWidth = 1.5; ctx.stroke();
-  ctx.fillStyle = 'rgba(200,180,255,.9)';
-  ctx.fillText(chipText, W/2, chipY+26);
+  const chipW = Math.min(ctx.measureText(chipText).width + 44, W - 100);
+  const chipH = 32, chipX = CX - chipW/2, chipY = 428;
+  roundRect(chipX, chipY, chipW, chipH, chipH/2);
+  ctx.fillStyle = 'rgba(168,85,247,.14)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(168,85,247,.38)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(210,190,255,.88)';
+  ctx.fillText(chipText, CX, chipY + chipH/2);
   ctx.restore();
 
-  // ── 雷达图 ──
-  const radarCX = W/2, radarCY = 800, radarR = 120;
+  // ══════════════════════════════
+  //  § 5  六维雷达 (中心 y=620, r=105)
+  //  chip 底部: 428+32=460 → 雷达顶标签: 620-105-28=487 → 间距 27px ✓
+  // ══════════════════════════════
+  const RC = { x: CX, y: 622, r: 105 };
   const dimKeys = ['PROMPT','TOOLS','SCENE','TRUTH','FLOW','FAITH'];
-  const N = dimKeys.length;
+  const NN = 6;
+
   // 网格
-  [0.25, 0.5, 0.75, 1].forEach(ratio => {
+  [.25,.5,.75,1].forEach(ratio => {
     ctx.save(); ctx.beginPath();
     dimKeys.forEach((_, i) => {
-      const a = Math.PI*2*i/N - Math.PI/2;
-      const x = radarCX + Math.cos(a)*radarR*ratio, y = radarCY + Math.sin(a)*radarR*ratio;
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      const a = Math.PI*2*i/NN - Math.PI/2;
+      const x = RC.x+Math.cos(a)*RC.r*ratio, y = RC.y+Math.sin(a)*RC.r*ratio;
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
     });
     ctx.closePath();
-    ctx.strokeStyle = `rgba(255,255,255,${ratio===1?.2:.06})`;
-    ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
+    ctx.strokeStyle = `rgba(255,255,255,${ratio===1?.18:.05})`;
+    ctx.lineWidth = 0.8; ctx.stroke(); ctx.restore();
   });
   // 轴线
   dimKeys.forEach((_, i) => {
-    const a = Math.PI*2*i/N - Math.PI/2;
+    const a = Math.PI*2*i/NN - Math.PI/2;
     ctx.save(); ctx.beginPath();
-    ctx.moveTo(radarCX, radarCY);
-    ctx.lineTo(radarCX + Math.cos(a)*radarR, radarCY + Math.sin(a)*radarR);
-    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
+    ctx.moveTo(RC.x, RC.y);
+    ctx.lineTo(RC.x+Math.cos(a)*RC.r, RC.y+Math.sin(a)*RC.r);
+    ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 0.8; ctx.stroke(); ctx.restore();
   });
   // 数据多边形
   ctx.save(); ctx.beginPath();
-  const radarPts = [];
-  dimKeys.forEach((k, i) => {
-    const a = Math.PI*2*i/N - Math.PI/2;
-    const v = (scores[k]||0)/100;
-    const x = radarCX + Math.cos(a)*radarR*v, y = radarCY + Math.sin(a)*radarR*v;
-    radarPts.push({x, y});
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  const rPts = dimKeys.map((k,i) => {
+    const a = Math.PI*2*i/NN - Math.PI/2, v=(scores[k]||0)/100;
+    return { x: RC.x+Math.cos(a)*RC.r*v, y: RC.y+Math.sin(a)*RC.r*v };
   });
+  rPts.forEach(({x,y},i) => i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y));
   ctx.closePath();
-  const radarFill = ctx.createLinearGradient(radarCX-radarR, radarCY-radarR, radarCX+radarR, radarCY+radarR);
-  radarFill.addColorStop(0, 'rgba(168,85,247,.45)'); radarFill.addColorStop(1, 'rgba(236,72,153,.35)');
-  ctx.fillStyle = radarFill; ctx.fill();
-  ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
-  // 顶点圆点
-  radarPts.forEach(({x, y}) => {
-    ctx.save(); ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI*2);
-    ctx.fillStyle = '#f59e0b'; ctx.fill(); ctx.restore();
+  const rfill = ctx.createLinearGradient(RC.x-RC.r,RC.y-RC.r,RC.x+RC.r,RC.y+RC.r);
+  rfill.addColorStop(0,'rgba(168,85,247,.45)'); rfill.addColorStop(1,'rgba(236,72,153,.35)');
+  ctx.fillStyle=rfill; ctx.fill();
+  ctx.strokeStyle='rgba(168,85,247,.8)'; ctx.lineWidth=1.8; ctx.stroke(); ctx.restore();
+  // 顶点
+  rPts.forEach(({x,y}) => {
+    ctx.save(); ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle='#f59e0b'; ctx.fill(); ctx.restore();
   });
-  // 维度标签
+  // 标签
   ctx.save();
-  ctx.font = '400 20px -apple-system,PingFang SC,sans-serif';
-  ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(180,176,200,.8)';
-  dimKeys.forEach((k, i) => {
-    const a = Math.PI*2*i/N - Math.PI/2;
-    const lx = radarCX + Math.cos(a)*(radarR+34), ly = radarCY + Math.sin(a)*(radarR+34) + 7;
+  ctx.font = `400 15px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(176,170,200,.8)';
+  dimKeys.forEach((k,i) => {
+    const a = Math.PI*2*i/NN - Math.PI/2;
+    const lx = RC.x+Math.cos(a)*(RC.r+28), ly = RC.y+Math.sin(a)*(RC.r+28);
     ctx.fillText(DIMS[k], lx, ly);
   });
   ctx.restore();
 
-  // ── 引用段 ──
-  const quoteY = 960;
+  // ══════════════════════════════
+  //  § 6  人格摘要卡片 (y=782~890)
+  //  雷达底标签: 622+105+28=755 → 卡片顶 782 → 间距 27px ✓
+  // ══════════════════════════════
+  const QY = 784;
   ctx.save();
-  // 背景卡片
-  ctx.beginPath(); ctx.roundRect(40, quoteY-8, W-80, 140, 16);
+  roundRect(36, QY, W-72, 108, 14);
   ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1; ctx.stroke();
-  ctx.font = '400 26px -apple-system,PingFang SC,sans-serif';
-  ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(228,228,231,.85)';
-  // 截取 quote 前 2 行
-  const quote = p.quote.slice(0, 55) + (p.quote.length > 55 ? '...' : '');
-  let line = '', ly = quoteY + 34, lh = 40;
-  for (const ch of quote) {
-    const test = line + ch;
-    if (ctx.measureText(test).width > W-120 && line) {
-      ctx.fillText(line, 68, ly); ly += lh; line = ch;
-      if (ly > quoteY + 114) { ctx.fillText(line + '...', 68, ly); break; }
-    } else line = test;
-  }
-  if (ly <= quoteY + 114) ctx.fillText(line, 68, ly);
+  ctx.strokeStyle = 'rgba(255,255,255,.09)'; ctx.lineWidth = 0.8; ctx.stroke();
+  // 引用文字（最多 2 行，每行约 22-23 汉字）
+  ctx.font = `400 20px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = 'rgba(220,215,235,.82)';
+  const quoteText = p.quote;
+  drawWrappedText(quoteText, 56, QY+38, W-112, 36, 2);
   ctx.restore();
 
-  // ── 底部分割线 ──
+  // ══════════════════════════════
+  //  § 7  底部分割线 + 页脚 (y=916~)
+  // ══════════════════════════════
+  const FOOT_Y = 916;
   ctx.save();
-  const bl = ctx.createLinearGradient(80, 0, W-80, 0);
-  bl.addColorStop(0, 'transparent'); bl.addColorStop(0.3, 'rgba(168,85,247,.4)');
-  bl.addColorStop(0.7, 'rgba(236,72,153,.4)'); bl.addColorStop(1, 'transparent');
-  ctx.strokeStyle = bl; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(80, 1130); ctx.lineTo(W-80, 1130); ctx.stroke();
-  ctx.restore();
-
-  // ── 底部文字 ──
-  ctx.save();
-  ctx.font = '600 26px -apple-system,PingFang SC,sans-serif';
-  ctx.textAlign = 'center';
-  const footGrad = ctx.createLinearGradient(W/2-200, 0, W/2+200, 0);
-  footGrad.addColorStop(0, '#a855f7'); footGrad.addColorStop(0.5, '#ec4899'); footGrad.addColorStop(1, '#06b6d4');
-  ctx.fillStyle = footGrad;
-  ctx.fillText('4.29 AI 分享会 · 来测测你的段位', W/2, 1180);
+  ctx.strokeStyle = hGrad(60,W-60, 0,'transparent', 0.3,'rgba(168,85,247,.4)', 0.7,'rgba(236,72,153,.4)', 1,'transparent');
+  ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(60,FOOT_Y); ctx.lineTo(W-60,FOOT_Y); ctx.stroke();
   ctx.restore();
 
   ctx.save();
-  ctx.font = '400 22px -apple-system,PingFang SC,sans-serif';
-  ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(100,90,130,.8)';
-  ctx.fillText('AIBTI · 你是哪种 AI 打工人', W/2, 1230);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `600 22px ${FONT}`;
+  ctx.fillStyle = hGrad(CX-220,CX+220, 0,'#a855f7', 0.5,'#ec4899', 1,'#06b6d4');
+  ctx.fillText('4.29 AI 分享会 · 测测你的 AI 段位', CX, FOOT_Y + 34);
+  ctx.font = `400 15px ${FONT}`;
+  ctx.fillStyle = 'rgba(110,100,140,.75)';
+  ctx.fillText('AIBTI  ·  你是哪种 AI 打工人', CX, FOOT_Y + 64);
   ctx.restore();
 
   return canvas.toDataURL('image/png');
