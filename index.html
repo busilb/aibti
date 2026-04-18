@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#08090c">
+<title>AIBTI · 你是哪种 AI 打工人</title>
+<style>
+/* ===== Z世代 设计语言 · 紫粉青三色宇宙 ===== */
+:root{
+  --bg:#0d0015;
+  --bg-card:rgba(255,255,255,.05);
+  --bg-elev:rgba(255,255,255,.09);
+  --text:#ffffff;
+  --text-sec:#b4b0c8;
+  --text-dim:#6b6780;
+  --border:rgba(255,255,255,.1);
+  --border-hl:rgba(255,255,255,.22);
+  /* 三色主渐变 */
+  --g1:linear-gradient(135deg,#a855f7,#ec4899,#06b6d4);
+  --g2:linear-gradient(135deg,#7c3aed,#db2777);
+  --g3:linear-gradient(135deg,#06b6d4,#6366f1);
+  /* 各等级色 */
+  --lv1:#6b7280; --lv2:#3b82f6; --lv3:#10b981; --lv4:#8b5cf6; --lv5:#f59e0b;
+  /* 单色便捷 */
+  --p:#a855f7; --pk:#ec4899; --cy:#06b6d4;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+
+/* 背景光晕 */
+body::before{content:'';position:fixed;top:-15%;right:-10%;width:55%;height:55%;
+  background:radial-gradient(circle,rgba(168,85,247,.28) 0%,transparent 65%);
+  pointer-events:none;z-index:-1}
+body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%;
+  background:radial-gradient(circle,rgba(6,182,212,.22) 0%,transparent 65%);
+  pointer-events:none;z-index:-1}
+
+#app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;z-index:1}
+.scene{padding:28px 20px 40px;min-height:100vh;display:flex;flex-direction:column}
+.hidden{display:none!important}
+
+/* ── 按钮 ── */
+.btn{display:block;width:100%;padding:17px;border:none;border-radius:16px;font-size:16px;
+  font-weight:700;letter-spacing:.04em;cursor:pointer;transition:transform .15s,box-shadow .15s;
+  font-family:inherit}
+.btn-primary{background:var(--g1);color:#fff;
+  box-shadow:0 8px 30px rgba(168,85,247,.45);position:relative;overflow:hidden}
+.btn-primary::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(rgba(255,255,255,.15),rgba(255,255,255,0));
+  border-radius:inherit;pointer-events:none}
+.btn-primary:active{transform:scale(.95);box-shadow:0 4px 16px rgba(168,85,247,.35)}
+.btn-ghost{background:rgba(255,255,255,.07);border:1px solid var(--border-hl);color:var(--text);
+  backdrop-filter:blur(10px)}
+.btn-ghost:active{background:rgba(255,255,255,.12);transform:scale(.97)}
+
+/* ── 通用文字 ── */
+.eyebrow{font-size:11px;letter-spacing:.35em;color:var(--text-dim);font-weight:600;
+  text-transform:uppercase;font-family:ui-monospace,Menlo,monospace}
+.section-head{display:flex;justify-content:space-between;align-items:baseline;margin:22px 0 12px}
+.section-head .label{font-size:11px;letter-spacing:.22em;color:var(--text-sec);font-weight:700;text-transform:uppercase}
+.section-head .ext{font-size:12px;background:var(--g1);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;cursor:pointer;font-weight:600}
+.foot{text-align:center;font-size:11px;color:var(--text-dim);margin-top:18px;letter-spacing:.05em;line-height:1.6}
+
+/* ── 首页大标题 ── */
+.brand{font-size:11px;letter-spacing:.5em;background:var(--g1);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px;
+  font-weight:700;font-family:ui-monospace,Menlo,monospace}
+.title{font-size:48px;font-weight:900;line-height:1.05;letter-spacing:-.03em;margin-bottom:12px}
+.title span{display:block}
+.title .line1{color:var(--text)}
+.title .line2{background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{font-size:14px;color:var(--text-sec);line-height:1.7;margin-bottom:20px}
+
+/* ── proof line ── */
+.proof-line{display:flex;justify-content:space-between;align-items:center;
+  background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;
+  padding:10px 14px;font-size:12px;color:var(--text-sec);font-variant-numeric:tabular-nums;
+  backdrop-filter:blur(10px)}
+.proof-line b{background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;font-weight:700}
+.proof-line .dot{width:7px;height:7px;border-radius:50%;background:#10b981;
+  box-shadow:0 0 0 3px rgba(16,185,129,.25);display:inline-block;margin-right:7px;
+  vertical-align:middle;animation:pulse 2s infinite}
+
+/* ── Ticker ── */
+.ticker{overflow:hidden;background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:12px;height:40px;display:flex;align-items:center;padding-left:14px;
+  backdrop-filter:blur(10px)}
+.ticker-dot{width:7px;height:7px;border-radius:50%;background:#10b981;
+  box-shadow:0 0 0 3px rgba(16,185,129,.25);margin-right:10px;
+  animation:pulse 2s infinite;flex-shrink:0}
+.ticker-line{flex:1;font-size:12px;color:var(--text-sec);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;animation:tickerSlide 5s ease-in-out infinite}
+.ticker-line .tk-time{color:var(--cy);font-family:ui-monospace,Menlo,monospace;margin-right:8px}
+.ticker-line .tk-bu{color:var(--text)}
+@keyframes tickerSlide{0%,8%{transform:translateY(40px);opacity:0}15%,85%{transform:translateY(0);opacity:1}92%,100%{transform:translateY(-40px);opacity:0}}
+
+/* ── 职能选择 ── */
+.role-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.role{background:rgba(255,255,255,.05);border:1.5px solid var(--border);border-radius:14px;
+  padding:14px 4px;text-align:center;cursor:pointer;transition:all .2s;font-family:inherit;
+  backdrop-filter:blur(10px)}
+.role.sel{background:rgba(168,85,247,.18);border-color:var(--p);
+  box-shadow:0 0 0 3px rgba(168,85,247,.2);transform:scale(1.04)}
+.role-icon{font-size:13px;font-weight:700;color:var(--text-sec);margin-bottom:4px;display:block;
+  font-family:ui-monospace,Menlo,monospace;letter-spacing:.05em}
+.role.sel .role-icon{color:var(--p)}
+.role-name{font-size:11px;color:var(--text);font-weight:500}
+
+/* ── 段位阶梯 ── */
+.ladder{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.lv{cursor:pointer;text-align:center;padding:10px 4px;border-radius:12px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);
+  transition:transform .15s;backdrop-filter:blur(8px)}
+.lv:active{transform:scale(.94)}
+.lv-circle{width:36px;height:36px;border-radius:50%;margin:0 auto 6px;display:flex;
+  align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;
+  font-weight:800;font-size:12px;color:#fff;letter-spacing:.05em;
+  box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.lv-name{font-size:10px;color:var(--text-sec);line-height:1.3;font-weight:500}
+
+/* ── Top3 卡片 ── */
+.hot-scroll{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;
+  padding:4px 20px 14px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.hot-scroll::-webkit-scrollbar{display:none}
+.hot-card{flex:0 0 190px;background:rgba(255,255,255,.06);border:1px solid var(--border);
+  border-radius:18px;padding:16px 12px;scroll-snap-align:start;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  backdrop-filter:blur(16px);transition:transform .15s,border-color .15s}
+.hot-card:active{transform:scale(.97)}
+.hot-meta{display:flex;justify-content:space-between;width:100%;font-size:9px;
+  color:var(--text-dim);font-family:ui-monospace,Menlo,monospace;letter-spacing:.1em;margin-bottom:8px}
+.hot-meta .lvtag{color:#fff;background:linear-gradient(135deg,#7c3aed,#a855f7);
+  padding:2px 7px;border-radius:99px;font-weight:700}
+.hot-name{font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px;letter-spacing:-.01em}
+.hot-slogan{font-size:11px;color:var(--text-sec);line-height:1.45}
+
+/* ── 头像 ── */
+.avatar{width:120px;height:120px;border-radius:50%;background:rgba(20,8,40,.9);
+  overflow:hidden;position:relative;margin:6px 0 10px;
+  box-shadow:0 0 0 2.5px rgba(168,85,247,.6),0 0 0 5px rgba(236,72,153,.3),0 8px 24px rgba(0,0,0,.4)}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.avatar .svg-fb{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(20,8,40,.9)}
+.avatar .svg-fb svg{width:55%;height:55%}
+
+.start-btn-wrap{margin-top:auto}
+.browse-link{display:block;text-align:center;font-size:13px;margin-top:14px;text-decoration:none;
+  padding:8px;font-weight:600;background:var(--g1);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+
+/* ── 输入框 ── */
+.input-group{margin-bottom:12px}
+.input-group label{display:block;font-size:11px;letter-spacing:.2em;color:var(--text-sec);
+  margin-bottom:6px;font-weight:600;text-transform:uppercase}
+.input-group input{width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--border);
+  border-radius:14px;padding:13px 16px;color:var(--text);font-family:inherit;font-size:14px;
+  outline:none;transition:border-color .2s,box-shadow .2s;backdrop-filter:blur(10px)}
+.input-group input:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(168,85,247,.2)}
+.input-group input::placeholder{color:var(--text-dim)}
+.input-group .hint{font-size:11px;color:var(--text-dim);margin-top:5px;line-height:1.5}
+
+/* ── BU 相关（保留不删，不显示也无妨） ── */
+.bu-scroll{display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.bu-scroll::-webkit-scrollbar{display:none}
+.bu-card{flex:0 0 200px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:14px}
+.bu-card .bu-rank{color:var(--p);font-size:11px;font-weight:700;margin-bottom:6px}
+.bu-card .bu-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px}
+.bu-card .bu-desc{font-size:11px;color:var(--text-sec);line-height:1.55}
+.rank-list,.rank-row,.rank-num,.rank-bu,.rank-stats,.rank-foot{display:none} /* BU排行已关闭 */
+
+/* ── 答题进度 ── */
+.bar-wrap{display:flex;align-items:center;gap:12px;margin-bottom:32px}
+.bar{flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden}
+.bar-fill{height:100%;background:var(--g1);transition:width .4s cubic-bezier(.34,1.56,.64,1);
+  border-radius:6px;box-shadow:0 0 10px rgba(168,85,247,.6)}
+.bar-num{font-size:12px;color:var(--text-sec);font-variant-numeric:tabular-nums;
+  min-width:42px;text-align:right;font-family:ui-monospace,Menlo,monospace;font-weight:600}
+
+/* ── 题目 ── */
+.q-tag{font-size:10px;letter-spacing:.22em;color:var(--text-dim);margin-bottom:16px;
+  font-family:ui-monospace,Menlo,monospace;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.q-tag .role-tag{background:linear-gradient(135deg,rgba(168,85,247,.25),rgba(236,72,153,.2));
+  color:var(--p);padding:3px 8px;border-radius:99px;font-size:9px;border:1px solid rgba(168,85,247,.3)}
+.q-text{font-size:23px;font-weight:700;line-height:1.45;margin-bottom:28px;
+  letter-spacing:-.01em;color:var(--text)}
+.options{display:flex;flex-direction:column;gap:10px}
+.opt{background:rgba(255,255,255,.05);border:1.5px solid var(--border);border-radius:18px;
+  padding:16px 18px;cursor:pointer;transition:all .2s;font-size:14px;line-height:1.55;
+  color:var(--text);text-align:left;font-family:inherit;display:flex;gap:12px;
+  align-items:flex-start;backdrop-filter:blur(10px)}
+.opt:active{transform:scale(.98)}
+.opt.sel{background:linear-gradient(135deg,rgba(168,85,247,.2),rgba(236,72,153,.15));
+  border-color:var(--p);box-shadow:0 0 0 2px rgba(168,85,247,.25),0 4px 20px rgba(168,85,247,.15)}
+.opt-letter{flex:0 0 26px;height:26px;border-radius:50%;background:rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;
+  color:var(--text-sec);margin-top:1px;font-family:ui-monospace,Menlo,monospace;transition:all .2s}
+.opt.sel .opt-letter{background:var(--g2);color:#fff;box-shadow:0 4px 12px rgba(168,85,247,.5)}
+
+/* ── 结果页 ── */
+#result{padding:0}
+.r-inner{padding:28px 20px 16px}
+.r-header{text-align:center;margin-bottom:24px}
+.r-header .eyebrow{margin-bottom:16px}
+.r-avatar-wrap{position:relative;display:inline-block;margin-bottom:18px}
+.r-avatar{width:200px;height:200px;border-radius:50%;background:rgba(20,8,40,.9);overflow:hidden;
+  position:relative;
+  box-shadow:0 0 0 3px rgba(168,85,247,.6),0 0 0 6px rgba(236,72,153,.35),
+             0 0 0 9px rgba(6,182,212,.2),0 16px 40px rgba(0,0,0,.6)}
+.r-avatar img{width:100%;height:100%;object-fit:cover;display:block;position:relative;z-index:1}
+.r-avatar .svg-fb{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(20,8,40,.9)}
+.r-avatar .svg-fb svg{width:55%;height:55%}
+.r-level-chip{position:absolute;bottom:6px;right:6px;width:50px;height:50px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;
+  font-weight:800;font-size:14px;color:#fff;border:3px solid var(--bg);letter-spacing:.05em;
+  box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.r-prefix{font-size:13px;color:var(--text-sec);margin-bottom:4px;letter-spacing:.05em}
+.r-name{font-size:42px;font-weight:900;line-height:1.05;letter-spacing:-.02em;margin-bottom:10px;
+  background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text}
+.r-slogan{font-size:15px;color:var(--text-sec);line-height:1.5;font-style:italic;margin-bottom:16px}
+.r-meta-row{display:inline-flex;gap:10px;font-size:11px;color:var(--text-sec);
+  font-family:ui-monospace,Menlo,monospace;letter-spacing:.05em;padding:7px 14px;
+  background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:99px;
+  backdrop-filter:blur(10px)}
+.r-meta-row .sep{color:var(--text-dim)}
+
+/* ── 卡片（玻璃态） ── */
+.card{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:20px;
+  padding:20px;margin-bottom:12px;backdrop-filter:blur(16px)}
+.card-title{font-size:11px;letter-spacing:.25em;color:var(--text-sec);margin-bottom:14px;
+  font-weight:700;text-transform:uppercase}
+.r-quote{font-size:14px;line-height:1.85;color:var(--text)}
+.r-cross{font-size:13px;background:var(--g1);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;margin-top:14px;
+  padding-top:14px;border-top:1px solid var(--border);line-height:1.7;font-weight:600}
+
+/* ── 雷达图 ── */
+.radar-wrap{display:flex;justify-content:center;align-items:center;padding:4px 0 12px}
+.radar{width:280px;height:280px;max-width:100%}
+.dim-list{margin-top:4px}
+.dim-row{display:flex;align-items:center;gap:12px;padding:7px 0;font-size:12px}
+.dim-name{flex:0 0 80px;color:var(--text-sec)}
+.dim-bar{flex:1;height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+.dim-bar-fill{height:100%;background:var(--g1);transition:width 1s cubic-bezier(.34,1.56,.64,1);
+  border-radius:3px}
+.dim-val{flex:0 0 28px;text-align:right;font-variant-numeric:tabular-nums;color:var(--text);
+  font-weight:700;font-family:ui-monospace,Menlo,monospace}
+
+/* ── 建议列表 ── */
+.advice-list{list-style:none;counter-reset:adv}
+.advice-list li{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:13px;
+  color:var(--text);line-height:1.7;display:flex;gap:12px;counter-increment:adv}
+.advice-list li:last-child{border-bottom:none;padding-bottom:0}
+.advice-list li::before{content:counter(adv,decimal-leading-zero);
+  background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;font-weight:800;font-family:ui-monospace,Menlo,monospace;
+  flex:0 0 22px;font-size:12px}
+
+/* ── 探索卡 ── */
+.explore-card{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);
+  border-radius:20px;padding:18px 20px;margin-bottom:12px;display:flex;
+  align-items:center;gap:14px;cursor:pointer;backdrop-filter:blur(10px)}
+.explore-card:active{background:rgba(168,85,247,.15)}
+.ec-num{font-size:36px;font-weight:900;background:var(--g1);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;line-height:1;font-family:ui-monospace,Menlo,monospace}
+.ec-text{flex:1;font-size:13px;color:var(--text);line-height:1.55}
+.ec-text b{color:var(--text-sec);font-weight:500}
+.ec-arrow{font-size:20px;background:var(--g1);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;font-weight:700}
+
+/* ── 分享卡 ── */
+.share-card{background:rgba(255,255,255,.06);border:1px solid var(--border);
+  border-radius:20px;padding:18px 20px;margin-bottom:12px;backdrop-filter:blur(16px)}
+.share-title{font-size:14px;color:var(--text);font-weight:700;margin-bottom:6px}
+.share-desc{font-size:12px;color:var(--text-sec);margin-bottom:14px;line-height:1.6}
+.share-quote{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:12px;
+  padding:12px;font-size:12px;color:var(--text-sec);line-height:1.7;margin-bottom:12px;
+  font-family:ui-monospace,Menlo,monospace;white-space:pre-line}
+
+/* ── CTA ── */
+.cta{background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(219,39,119,.3));
+  border:1px solid rgba(168,85,247,.4);border-radius:20px;padding:20px;
+  margin-bottom:12px;backdrop-filter:blur(16px)}
+.cta-eyebrow{font-size:11px;letter-spacing:.3em;background:var(--g1);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:8px;font-family:ui-monospace,Menlo,monospace;font-weight:700}
+.cta-title{font-size:18px;font-weight:800;line-height:1.35;margin-bottom:8px;color:var(--text)}
+.cta-desc{font-size:12px;color:var(--text-sec);line-height:1.65;margin-bottom:14px}
+.cta-btn{display:block;background:var(--g1);color:#fff;text-align:center;padding:13px;
+  border-radius:14px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:.04em;
+  box-shadow:0 8px 24px rgba(168,85,247,.4)}
+
+/* ── 部门对线榜 ── */
+.compare-card{background:rgba(255,255,255,.06);border:1px solid var(--border);
+  border-radius:20px;padding:18px 20px;margin-bottom:12px;backdrop-filter:blur(16px)}
+.cc-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+.cc-title{font-size:11px;letter-spacing:.25em;color:var(--text-sec);font-weight:700;text-transform:uppercase}
+.cc-bu{font-size:11px;background:var(--g1);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;font-family:ui-monospace,Menlo,monospace}
+.cc-rank{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.cc-rank-num{font-size:48px;font-weight:900;background:var(--g1);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;line-height:1;font-family:ui-monospace,Menlo,monospace}
+.cc-rank-text{font-size:14px;color:var(--text);line-height:1.5}
+.cc-rank-text b{font-weight:800}
+.cc-bar-wrap{margin-top:14px}
+.cc-bar{height:8px;background:rgba(255,255,255,.07);border-radius:6px;overflow:hidden;margin-bottom:6px}
+.cc-bar-fill{height:100%;background:var(--g1);border-radius:6px;
+  transition:width 1.2s cubic-bezier(.34,1.56,.64,1);box-shadow:0 0 8px rgba(168,85,247,.5)}
+.cc-bar-text{font-size:11px;color:var(--text-sec);font-family:ui-monospace,Menlo,monospace;text-align:right}
+.cc-foot{font-size:11px;color:var(--text-dim);margin-top:12px;padding-top:12px;
+  border-top:1px dashed var(--border);line-height:1.6}
+
+/* ── 挑战卡片 ── */
+.challenge-out{background:rgba(255,255,255,.06);border:1px solid var(--border);
+  border-radius:20px;padding:18px 20px;margin-bottom:12px;text-align:center;backdrop-filter:blur(16px)}
+.co-eyebrow{font-size:11px;letter-spacing:.25em;background:var(--g1);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  font-weight:700;margin-bottom:8px;font-family:ui-monospace,Menlo,monospace}
+.co-title{font-size:15px;color:var(--text);font-weight:800;margin-bottom:6px}
+.co-desc{font-size:12px;color:var(--text-sec);line-height:1.6;margin-bottom:12px}
+.co-quote{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;
+  padding:10px;font-size:11px;background:var(--g1);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1.6;margin-bottom:10px;font-family:ui-monospace,Menlo,monospace;
+  text-align:left;word-break:break-all}
+/* 挑战链接文字需要普通色 */
+.co-quote-text{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;
+  padding:10px;font-size:11px;color:var(--text-dim);
+  line-height:1.6;margin-bottom:10px;font-family:ui-monospace,Menlo,monospace;
+  text-align:left;word-break:break-all}
+
+/* ── 挑战横幅 ── */
+.challenge-banner{background:linear-gradient(135deg,rgba(124,58,237,.4),rgba(219,39,119,.35));
+  border:1px solid rgba(168,85,247,.4);border-radius:16px;padding:14px 16px;
+  margin-bottom:18px;display:flex;align-items:center;gap:12px;backdrop-filter:blur(10px)}
+.cb-avatar{width:44px;height:44px;border-radius:50%;background:var(--g2);
+  display:flex;align-items:center;justify-content:center;font-weight:800;
+  font-family:ui-monospace,Menlo,monospace;font-size:11px;flex-shrink:0;
+  letter-spacing:.05em;color:#fff;box-shadow:0 4px 12px rgba(168,85,247,.5)}
+.cb-text{flex:1;font-size:13px;line-height:1.4;font-weight:500;color:var(--text)}
+.cb-text b{font-weight:800;background:var(--g1);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+
+/* ── 导航底部 ── */
+.bottom-nav{display:flex;gap:10px;padding:0 20px 22px}
+.bottom-nav .btn{flex:1;font-size:13px}
+
+/* ── 分享 Modal ── */
+.share-modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.9);backdrop-filter:blur(16px);
+  z-index:200;display:flex;align-items:center;justify-content:center;
+  padding:20px;flex-direction:column;gap:16px;overflow-y:auto}
+.share-modal-mask.hidden{display:none}
+.share-card-render{width:100%;max-width:340px;background:linear-gradient(160deg,#1a0a2e,#0d0015);
+  border:1px solid rgba(168,85,247,.35);border-radius:24px;padding:26px 22px;color:var(--text);
+  position:relative;overflow:hidden;box-shadow:0 0 60px rgba(168,85,247,.2)}
+.share-card-render::before{content:'';position:absolute;top:-40%;right:-20%;width:80%;height:80%;
+  background:radial-gradient(circle,rgba(168,85,247,.25),transparent 60%);pointer-events:none}
+.share-card-render::after{content:'';position:absolute;bottom:-30%;left:-20%;width:70%;height:70%;
+  background:radial-gradient(circle,rgba(6,182,212,.2),transparent 60%);pointer-events:none}
+.scr-brand{font-size:10px;letter-spacing:.4em;background:var(--g1);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  font-family:ui-monospace,Menlo,monospace;margin-bottom:14px;text-align:center;
+  position:relative;z-index:1;font-weight:700}
+.scr-avatar{width:140px;height:140px;border-radius:50%;background:rgba(30,10,50,.9);
+  overflow:hidden;margin:0 auto 16px;position:relative;z-index:1;
+  box-shadow:0 0 0 3px rgba(168,85,247,.5),0 0 0 6px rgba(236,72,153,.3),0 8px 24px rgba(0,0,0,.5)}
+.scr-avatar img{width:100%;height:100%;object-fit:cover}
+.scr-prefix{font-size:12px;color:var(--text-sec);text-align:center;margin-bottom:4px;
+  position:relative;z-index:1}
+.scr-name{font-size:32px;font-weight:900;text-align:center;letter-spacing:-.02em;
+  background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:6px;position:relative;z-index:1}
+.scr-slogan{font-size:13px;color:var(--text-sec);text-align:center;font-style:italic;
+  margin-bottom:14px;position:relative;z-index:1}
+.scr-meta{text-align:center;margin-bottom:16px;position:relative;z-index:1}
+.scr-chip{display:inline-block;font-size:10px;background:var(--g1);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  border:1px solid rgba(168,85,247,.4);padding:4px 12px;border-radius:99px;
+  letter-spacing:.1em;font-family:ui-monospace,Menlo,monospace;font-weight:700}
+.scr-radar{display:flex;justify-content:center;margin-bottom:16px;position:relative;z-index:1}
+.scr-radar svg{width:200px;height:200px}
+.scr-foot{text-align:center;font-size:10px;color:var(--text-dim);letter-spacing:.05em;
+  border-top:1px solid var(--border);padding-top:12px;position:relative;z-index:1}
+.scr-foot b{background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;font-weight:700}
+.share-modal-tip{color:rgba(255,255,255,.8);font-size:13px;text-align:center;
+  line-height:1.5;max-width:340px}
+.share-modal-tip b{background:var(--g1);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;font-weight:700}
+.share-modal-actions{display:flex;gap:10px;width:100%;max-width:340px}
+.share-modal-actions button{flex:1;padding:13px;border-radius:14px;
+  border:1px solid var(--border-hl);background:rgba(255,255,255,.08);
+  color:var(--text);font-family:inherit;font-size:13px;cursor:pointer;font-weight:600;
+  backdrop-filter:blur(10px)}
+.share-modal-actions button.primary{background:var(--g1);color:#fff;border:none;
+  box-shadow:0 6px 20px rgba(168,85,247,.4)}
+
+/* ── 图鉴 ── */
+#gallery{padding:28px 20px 44px}
+.gal-back{display:flex;align-items:center;gap:8px;color:var(--text-sec);font-size:13px;
+  background:none;border:none;padding:0;margin-bottom:22px;cursor:pointer;font-family:inherit}
+.gal-title{font-size:30px;font-weight:900;letter-spacing:-.02em;margin-bottom:8px;
+  background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.gal-sub{font-size:13px;color:var(--text-sec);margin-bottom:24px;line-height:1.65}
+.gal-section{margin-bottom:28px}
+.gal-section-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.gal-section-num{font-family:ui-monospace,Menlo,monospace;font-weight:800;font-size:11px;
+  color:#fff;padding:4px 10px;border-radius:7px;letter-spacing:.05em;
+  box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.gal-section-name{font-size:14px;color:var(--text);font-weight:700}
+.gal-section-desc{flex:1;font-size:11px;color:var(--text-dim);text-align:right}
+.gal-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.gal-card{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:18px;
+  padding:16px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;
+  cursor:pointer;backdrop-filter:blur(10px);transition:transform .15s,border-color .15s}
+.gal-card:active{transform:scale(.96);border-color:rgba(168,85,247,.4)}
+.gal-card .gc-rare{font-size:9px;color:var(--text-dim);font-family:ui-monospace,Menlo,monospace;
+  letter-spacing:.1em;margin-bottom:8px}
+.gal-card .avatar{width:92px;height:92px;margin:0 0 10px}
+.gal-card .gc-name{font-size:14px;font-weight:800;color:var(--text);margin-bottom:3px}
+.gal-card .gc-slogan{font-size:10px;color:var(--text-sec);line-height:1.4}
+
+/* ── Modal ── */
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);
+  z-index:100;display:flex;align-items:flex-end;justify-content:center}
+.modal-mask.hidden{display:none}
+.modal{background:linear-gradient(180deg,#1a0a2e,#0d0015);width:100%;max-width:480px;
+  max-height:92vh;border-radius:24px 24px 0 0;overflow-y:auto;animation:slideUp .3s ease;
+  border-top:1px solid rgba(168,85,247,.3)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+.modal-close{position:sticky;top:0;background:linear-gradient(180deg,#1a0a2e 50%,transparent);
+  text-align:right;padding:14px 22px 6px;z-index:1}
+.modal-close button{background:rgba(255,255,255,.1);border:none;width:32px;height:32px;
+  border-radius:50%;color:var(--text);font-size:16px;cursor:pointer;font-family:inherit}
+.modal-body{padding:0 22px 36px}
+
+/* ── 动画 ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(.9)}}
+.anim{animation:fadeUp .4s ease both}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- WELCOME -->
+<section class="scene" id="welcome">
+  <!-- 挑战横幅（从挑战链接进来时显示） -->
+  <div id="challengeBanner" class="challenge-banner hidden">
+    <div class="cb-avatar" id="cbAvatar">L4</div>
+    <div class="cb-text" id="cbText"></div>
+  </div>
+
+  <div class="brand">A · I · B · T · I</div>
+  <h1 class="title"><span class="line1">你是哪种</span><span class="line2">AI 打工人</span></h1>
+  <p class="subtitle">18 题 · 4 分钟 · 5 个等级 · 15 个角色 · 4 岗位定制题</p>
+
+  <!-- ① 职能前置 —— 最显眼位置 -->
+  <div class="section-head" style="margin-top:6px"><span class="label">第一步 · 选你的职能</span></div>
+  <div class="role-grid" id="roleGrid">
+    <div class="role sel" data-role="OPS"><span class="role-icon">运营</span><span class="role-name">Operations</span></div>
+    <div class="role" data-role="PD"><span class="role-icon">产品</span><span class="role-name">Product</span></div>
+    <div class="role" data-role="DEV"><span class="role-icon">研发</span><span class="role-name">Engineer</span></div>
+    <div class="role" data-role="BD"><span class="role-icon">商务</span><span class="role-name">Business</span></div>
+  </div>
+
+  <!-- 实时数据（来自后端 API） -->
+  <div class="proof-line" style="margin-top:18px">
+    <span><span class="dot"></span>已 <b id="proofN">—</b> 人测过</span>
+    <span>L5 老虾农 仅 <b id="proofOgPct">0.7%</b></span>
+  </div>
+
+  <!-- 实时滚动通知（来自后端 API） -->
+  <div class="ticker" style="margin-top:12px;margin-bottom:0">
+    <span class="ticker-dot"></span>
+    <div class="ticker-line" id="tickerLine">加载最新动态...</div>
+  </div>
+
+  <!-- ② 归属填写 -->
+  <div class="section-head"><span class="label">填一下归属（选填，匿名上榜）</span></div>
+  <div class="input-group">
+    <input type="text" id="inpBU" placeholder="你的 BU（如：淘天 / 菜鸟 / 高德 / ...）" maxlength="20" />
+  </div>
+  <div class="input-group">
+    <input type="text" id="inpDept" placeholder="部门或团队（如：翱象产品运维）" maxlength="20" />
+    <div class="hint">填了能看到「你部门已 N 人测过 · 你排第几」对线榜</div>
+  </div>
+
+  <!-- ③ 段位介绍 + 图鉴入口 -->
+  <div class="section-head"><span class="label">段位体系</span><span class="ext" id="lnkGallery2">查看图鉴</span></div>
+  <div class="ladder" id="ladder"></div>
+
+  <!-- ④ Top3 稀有人格 -->
+  <div class="section-head"><span class="label">稀有人格 Top 3</span></div>
+  <div class="hot-scroll" id="hotScroll"></div>
+
+  <div class="start-btn-wrap">
+    <button class="btn btn-primary" id="btnStart">开始测试</button>
+    <a href="#" class="browse-link" id="lnkGallery">先浏览 15 个人格图鉴</a>
+  </div>
+  <p class="foot">本测试仅供娱乐 · 4.29 AI 分享会前的暖场摸底</p>
+</section>
+
+<!-- QUIZ -->
+<section class="scene hidden" id="quiz">
+  <div class="bar-wrap">
+    <div class="bar"><div class="bar-fill" id="barFill" style="width:0%"></div></div>
+    <div class="bar-num" id="barNum">1 / 18</div>
+  </div>
+  <div id="qBody"></div>
+</section>
+
+<!-- RESULT -->
+<section class="scene hidden" id="result">
+  <div class="r-inner">
+    <div class="r-header">
+      <div class="eyebrow">YOUR AI PERSONALITY</div>
+      <div class="r-avatar-wrap anim">
+        <div class="r-avatar" id="rAvatar"></div>
+        <div class="r-level-chip" id="rLvChip">L4</div>
+      </div>
+      <div class="r-prefix" id="rPrefix">运营 · 老虾农</div>
+      <div class="r-name" id="rName">运营老虾农</div>
+      <div class="r-slogan" id="rSlogan">"又来养虾了？"</div>
+      <div><div class="r-meta-row" id="rMeta"></div></div>
+    </div>
+
+    <div class="card anim">
+      <div class="card-title">人格解读</div>
+      <p class="r-quote" id="rQuote"></p>
+      <p class="r-cross" id="rCross"></p>
+    </div>
+
+    <div class="card anim">
+      <div class="card-title">六维能力</div>
+      <div class="radar-wrap"><svg class="radar" id="radar" viewBox="0 0 280 280"></svg></div>
+      <div class="dim-list" id="dimList"></div>
+    </div>
+
+    <div class="card anim">
+      <div class="card-title">给你的建议</div>
+      <ul class="advice-list" id="adviceList"></ul>
+    </div>
+
+    <!-- 部门对线榜（仅当填了部门时显示） -->
+    <div class="compare-card anim hidden" id="compareCard">
+      <div class="cc-head">
+        <div class="cc-title">部门对线榜</div>
+        <div class="cc-bu" id="ccBu"></div>
+      </div>
+      <div class="cc-rank">
+        <div class="cc-rank-num" id="ccRankNum">#3</div>
+        <div class="cc-rank-text" id="ccRankText"></div>
+      </div>
+      <div class="cc-bar-wrap">
+        <div class="cc-bar"><div class="cc-bar-fill" id="ccBarFill" style="width:0%"></div></div>
+        <div class="cc-bar-text" id="ccBarText"></div>
+      </div>
+      <div class="cc-foot">榜单数据当前为模拟，正式上线后接真实埋点</div>
+    </div>
+
+    <!-- 挑战卡片 -->
+    <div class="challenge-out anim">
+      <div class="co-eyebrow">CHALLENGE LINK</div>
+      <div class="co-title">把战书甩给同事</div>
+      <div class="co-desc">生成一条专属 PK 链接 · 同事点开会看到「你」邀请挑战</div>
+      <div class="co-quote-text" id="coQuote"></div>
+      <button class="btn btn-primary" id="btnChallenge" style="font-size:13px;padding:12px;border-radius:10px">复制挑战链接</button>
+    </div>
+
+    <div class="explore-card anim" id="exploreCard">
+      <div class="ec-num" id="ecNum">14</div>
+      <div class="ec-text">个人格<b>等你解锁</b><br/>看看其他 14 种人格</div>
+      <div class="ec-arrow">→</div>
+    </div>
+
+    <div class="share-card anim">
+      <div class="share-title">分享你的人格</div>
+      <div class="share-desc">3 种姿势：生成专属海报 / 复制对线话术 / 长按整页截图</div>
+      <div class="share-quote" id="shareQuote"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" id="btnShareImage" style="flex:1">生成海报</button>
+        <button class="btn btn-ghost" id="btnShare" style="flex:1">复制话术</button>
+      </div>
+    </div>
+
+    <div class="cta anim">
+      <div class="cta-eyebrow">04 · 29 · WED · 13:30</div>
+      <div class="cta-title" id="ctaTitle">「老虾农」专场 AI 分享会</div>
+      <div class="cta-desc">《一个运营人的 AI 使用地图：从「不知道干嘛」到「离不开了」》<br/>5 款工具横评 · 3 个 Wow 时刻 · 4 个落地场景</div>
+      <a class="cta-btn" href="#" id="ctaBtn" target="_blank">登记你的人格 · 进入 BU 大数据</a>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="btn btn-ghost" id="btnGallery2">查看图鉴</button>
+    <button class="btn btn-ghost" id="btnRetry">再测一次</button>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="scene hidden" id="gallery">
+  <button class="gal-back" id="btnBack">← 返回</button>
+  <h1 class="gal-title">15 个 AI 人格图鉴</h1>
+  <p class="gal-sub">5 个等级 × 3 个角色 · 覆盖 OpenClaw 时代的全员档案。点击任意一张查看完整解读。</p>
+  <div id="galSections"></div>
+  <div style="margin-top:28px"><button class="btn btn-primary" id="btnStartFromGal">开始测试</button></div>
+</section>
+
+<!-- 分享海报 MODAL -->
+<div class="share-modal-mask hidden" id="shareModal">
+  <div class="share-card-render" id="shareRender"></div>
+  <div class="share-modal-tip">
+    <b>长按图片保存</b> · 发钉群 / 朋友圈<br/>
+    PC 上右键另存为图片
+  </div>
+  <div class="share-modal-actions">
+    <button id="btnCloseShare">关闭</button>
+    <button class="primary" id="btnCopyShareText">复制话术</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-mask hidden" id="modal">
+  <div class="modal">
+    <div class="modal-close"><button id="btnCloseModal">✕</button></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const DIMS = {
+  PROMPT:'提示工程', TOOLS:'工具广度', SCENE:'场景洞察',
+  TRUTH:'幻觉警觉', FLOW:'流程融合', FAITH:'AI 信仰'
+};
+
+const ROLES = {
+  OPS:{name:'运营', ext:'比一般同款多一份「业务嗅觉 + ROI 焦虑」'},
+  PD: {name:'产品', ext:'比一般同款多一种「PRD 写到崩溃」的体验'},
+  DEV:{name:'研发', ext:'比一般同款多一股「凡事先看 GitHub」的执念'},
+  BD: {name:'商务', ext:'比一般同款多一份「AI 也得给我谈下来」的气场'}
+};
+
+const LEVELS = [
+  {code:'L1', name:'蛮荒纪元', desc:'听过 AI', range:[0,28],  color:'#5a6068'},
+  {code:'L2', name:'启蒙时代', desc:'试过 AI', range:[28,46], color:'#7c6e92'},
+  {code:'L3', name:'工业革命', desc:'会用 AI', range:[46,64], color:'#5a8a8e'},
+  {code:'L4', name:'信息时代', desc:'玩透 AI', range:[64,82], color:'#c8985f'},
+  {code:'L5', name:'奇点降临', desc:'超越 AI', range:[82,101],color:'#d4a574'}
+];
+
+/* BU 段位实时排行榜（伪数据，待接后端） */
+const BU_RANK = [
+  { bu:'高德',     avg:4.2, count:842, og:6 },
+  { bu:'菜鸟',     avg:3.9, count:1245, og:4 },
+  { bu:'AE',       avg:3.7, count:986, og:3 },
+  { bu:'淘天',     avg:3.5, count:2103, og:8 },
+  { bu:'阿里云',   avg:3.4, count:1567, og:5 },
+  { bu:'集团公益', avg:3.3, count:412, og:2 },
+  { bu:'阿里健康', avg:3.1, count:328, og:1 },
+  { bu:'本地生活', avg:3.0, count:687, og:2 },
+  { bu:'蚂蚁',     avg:2.9, count:1834, og:4 },
+  { bu:'1688',     avg:2.7, count:524, og:1 }
+];
+
+/* Ticker 滚动通知（伪数据） */
+const TICKER_LINES = [
+  '一位淘天 PD 测出 L5 老虾农',
+  '一位菜鸟运营测出 L4 赛博包工头',
+  '一位高德研发测出 L4 老法师',
+  '一位 AE 商务测出 L3 御三家投机者',
+  '一位集团公益运营测出 L2 复制怪',
+  '一位阿里云研发测出 L5 赛博炼丹师',
+  '一位淘天运营测出 L3 养虾户',
+  '一位 1688 运营测出 L2 仰卧起坐',
+  '一位菜鸟 PD 测出 L4 幻觉猎手',
+  '一位高德 BD 测出 L1 钉钉党'
+];
+
+/* BU 卷王榜数据 */
+const BUS = [
+  {name:'高德',     desc:'已上线员工 AI 认知能力认证（20 单选 + 5 多选）', rank:'TOP'},
+  {name:'菜鸟',     desc:'菜包内已做全员 Token 消耗排名 + AI 主题分享',     rank:'#02'},
+  {name:'AE',       desc:'全员每日打卡学习 AI 并参加考试',                   rank:'#03'},
+  {name:'集团公益', desc:'已组织 18 次全员线上必修主题课程',                 rank:'#04'},
+  {name:'阿里健康', desc:'多次组织 AI 主题课程',                              rank:'#05'},
+  {name:'你的 BU',  desc:'4.29 这场是起点 · 测完看看你 BU 排第几',            rank:'?'}
+];
+
+/* SVG fallback icons */
+const ICONS = {
+  'SLEEPER':   `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="32" fill="#fff"/><line x1="32" y1="40" x2="42" y2="50" stroke="#171717" stroke-width="4" stroke-linecap="round"/><line x1="42" y1="40" x2="32" y2="50" stroke="#171717" stroke-width="4" stroke-linecap="round"/><line x1="58" y1="40" x2="68" y2="50" stroke="#171717" stroke-width="4" stroke-linecap="round"/><line x1="68" y1="40" x2="58" y2="50" stroke="#171717" stroke-width="4" stroke-linecap="round"/></svg>`,
+  'CLOUD':     `<svg viewBox="0 0 100 100"><path d="M28 65 Q18 65 18 55 Q18 45 28 45 Q30 32 44 32 Q56 30 60 42 Q74 40 78 52 Q86 54 86 62 Q86 72 74 72 L30 72 Q22 72 28 65 Z" fill="#fff"/></svg>`,
+  'DING':      `<svg viewBox="0 0 100 100"><rect x="22" y="18" width="56" height="64" rx="10" fill="#fff"/></svg>`,
+  'PASTE':     `<svg viewBox="0 0 100 100"><rect x="18" y="18" width="42" height="42" rx="5" fill="none" stroke="#fff" stroke-width="4"/><rect x="40" y="40" width="42" height="42" rx="5" fill="#fff"/></svg>`,
+  'SITUP':     `<svg viewBox="0 0 100 100"><polygon points="50,12 70,38 58,38 58,62 70,62 50,88 30,62 42,62 42,38 30,38" fill="#fff"/></svg>`,
+  'PUPPET':    `<svg viewBox="0 0 100 100"><path d="M22 30 Q22 18 36 18 Q40 18 40 24 L40 36 Q40 50 24 50 L24 44 Q34 44 34 36 L30 36 Q22 36 22 30 Z M52 30 Q52 18 66 18 Q70 18 70 24 L70 36 Q70 50 54 50 L54 44 Q64 44 64 36 L60 36 Q52 36 52 30 Z" fill="#fff"/></svg>`,
+  'FARMER':    `<svg viewBox="0 0 100 100"><path d="M50 18 L56 28 L66 26 L65 38 L75 42 L70 52 L75 62 L65 66 L66 78 L56 76 L50 86 L44 76 L34 78 L35 66 L25 62 L30 52 L25 42 L35 38 L34 26 L44 28 Z" fill="#fff"/></svg>`,
+  'TOKEN':     `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="32" fill="#fff"/></svg>`,
+  'TRIPLE':    `<svg viewBox="0 0 100 100"><circle cx="32" cy="42" r="14" fill="#fff" opacity=".9"/><circle cx="68" cy="42" r="14" fill="#fff" opacity=".75"/><circle cx="50" cy="68" r="14" fill="#fff"/></svg>`,
+  'BOSS':      `<svg viewBox="0 0 100 100"><path d="M18 70 L25 35 L38 55 L50 25 L62 55 L75 35 L82 70 Z" fill="#fff"/></svg>`,
+  'WIZARD':    `<svg viewBox="0 0 100 100"><polygon points="50,15 58,38 82,38 62,53 70,76 50,62 30,76 38,53 18,38 42,38" fill="#fff"/></svg>`,
+  'HUNTER':    `<svg viewBox="0 0 100 100"><circle cx="42" cy="42" r="22" fill="none" stroke="#fff" stroke-width="6"/><line x1="58" y1="58" x2="82" y2="82" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg>`,
+  'OG-FARMER': `<svg viewBox="0 0 100 100"><path d="M10 60 L90 60 L90 65 L10 65 Z M30 60 Q30 30 50 30 Q70 30 70 60 Z" fill="#fff"/></svg>`,
+  'PRIEST':    `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="32" rx="22" ry="5" fill="none" stroke="#fff" stroke-width="3"/><circle cx="50" cy="55" r="16" fill="#fff"/><rect x="40" y="71" width="20" height="18" rx="3" fill="#fff"/></svg>`,
+  'ALCHEMY':   `<svg viewBox="0 0 100 100"><path d="M40 18 L60 18 L60 36 L78 72 Q82 82 70 82 L30 82 Q18 82 22 72 L40 36 Z" fill="#fff"/></svg>`
+};
+
+/* ===== 15 PERSONAS ===== */
+const PERSONAS = [
+  // L1
+  {code:'SLEEPER', name:'AI 装死人', level:'L1', rare:'14.2%', slogan:'培训通知点了已读',
+    rule:s=>s.LEVEL<25 && s.FAITH<35,
+    quote:'你是 AI 装死人。培训通知第一时间点了已读，但群里 200 条 AI 讨论一条没看。AI 使用记录最近一次是三个月前问"if 语句怎么写"。不是不会，是不想 —— 你坚信"AI 再厉害也得我点鼠标"，所以你选择不点。能来测这个测试，已经超额完成本月 AI 学习指标。',
+    advice:['门槛拉到最低：让 ideaClaw 帮你回一封难写的钉钉，试一次就回不去','别学复杂的，先把"用 AI 写日报"做到极致','4.29 那场是为你准备的，真的']},
+
+  {code:'CLOUD', name:'云体验', level:'L1', rare:'13.7%', slogan:'看截图就过瘾',
+    rule:s=>s.LEVEL<28 && s.SCENE>=35 && s.TOOLS<40,
+    quote:'你是云体验人格。参加过无数 AI 分享会，收藏过无数 AI 文章，朋友圈点赞过无数 AI 截图 —— 但 ideaClaw 一次都没真正装来用。你坚信"看会了就等于用过了"。每次同事问"你用得怎么样"时，你会自然切换话题。今天来测 AIBTI，已经是你离 AI 最近的一次。',
+    advice:['今天测完，立刻装 ideaClaw，5 分钟搞定','装完别只看，给它一个真实任务：让它写一份明天要用的会议纪要模板','4.29 分享会带笔记本现场跟做，是从「云」到「地」的最短路径']},
+
+  {code:'DING', name:'钉钉党', level:'L1', rare:'10.8%', slogan:'AI 出钉钉 = 不存在',
+    rule:s=>s.LEVEL<30 && s.FLOW>=30,
+    quote:'你是钉钉党。所有工作都在钉钉里完成，AI 也得在钉钉里。让你打开网页问 AI？不可能。让你去 IDE 跑代码？这不是开发干的事。你是钉钉生态最忠实的用户，AI 对你来说只是钉钉里多一个能 @ 的助理。',
+    advice:['先把 ideaClaw / 小Q 这种「钉钉里的 AI」用透，门槛对你最低','慢慢扩展到 QoderWork / 网页版 Claude，会发现新世界','试着把"钉钉沟通完成的事"换成"AI + 钉钉"，效率立刻翻倍']},
+
+  // L2
+  {code:'PASTE', name:'复制怪', level:'L2', rare:'15.5%', slogan:'Ctrl+C 是我的本能',
+    rule:s=>s.LEVEL<46 && s.PROMPT<45,
+    quote:'你是复制粘贴怪。和 AI 对话历史里 80% 是"总结一下"、"翻译一下"、"帮我写一下"。把整篇文档原封不动丢进去，等待奇迹。AI 回得不太对，你关掉重开。不是不会用 AI，只是从来没认真用过 —— 写好 Prompt 是这辈子 ROI 最高的技能之一，请抓紧补上。',
+    advice:['下次问 AI 之前，强制自己写"背景 / 目标 / 约束"三段，效果差距巨大','一周内学会写一个能复用的 Prompt 模板','4.29 分享会必到，你是核心目标用户']},
+
+  {code:'SITUP', name:'仰卧起坐', level:'L2', rare:'12.2%', slogan:'试一次工具放弃一次',
+    rule:s=>s.LEVEL<50 && s.TOOLS>=55 && s.FLOW<55,
+    quote:'你是仰卧起坐人格。新工具一发布必装，装完玩 10 分钟发个朋友圈"被惊艳了"，第二天再也不打开。收藏夹躺着 23 个 AI 产品，电脑里 15 个客户端，每月订阅费够吃饭，真正天天用的还是 ChatGPT 网页版。不是在用 AI，是在收集 AI。',
+    advice:['停止比较，选 1 个主力工具深度用 1 个月再说','把"试新工具"的预算砍一半，另一半投给"用透 1 个工具"','下次装新工具前先回答："我现在的工具是哪里不够用？"答不出来就别装']},
+
+  {code:'PUPPET', name:'AI 嘴替', level:'L2', rare:'9.8%', slogan:'这话不是我说的，是 Claude',
+    rule:s=>s.LEVEL<50 && s.FLOW>=45 && s.SCENE<58,
+    quote:'你是 AI 嘴替。周报、述职、答谢信、给老板的汇报、跟同事的撕逼，全部由 AI 代笔。输入"心情不爽，回他点啥"，AI 输出八面玲珑的回复，你一字不改发出去。过去半年的文字风格诡异统一 —— 因为那不是你的风格，那是 Claude 的风格。',
+    advice:['给 AI 一份你自己的文风样本，让它学你说话，别让你学它','重要场合的发言 AI 出初稿，必须人工改一遍 —— 找回自己的语气','把"嘴替"延伸到「读」—— 让 AI 帮你快速读懂别人的潜台词']},
+
+  // L3
+  {code:'FARMER', name:'养虾户', level:'L3', rare:'7.1%', slogan:'让 AI 替我打工',
+    rule:s=>s.LEVEL>=46 && s.LEVEL<66 && s.FLOW>=58,
+    quote:'你是养虾户。把 AI 真正"焊进工作流"的中坚派。不在乎模型多聪明，在乎它有没有 7×24 帮你干活。日报、周报、晨会纪要、需求评审，全部 AI 自动跑。看那些"开网页问一句"用 AI 的同事，就像看人家用算盘做财务报表。',
+    advice:['把工作流 SOP 沉淀成 ATA 帖，团队 ROI 立刻 ×10','尝试 Claude Skill / Subagent，从「自动化」升级到「自主化」','每月做一次"工作流复盘"，砍掉 AI 没真正帮上忙的环节']},
+
+  {code:'TOKEN', name:'Token 佬', level:'L3', rare:'8.4%', slogan:'财务部艾特过我',
+    rule:s=>s.LEVEL>=46 && s.LEVEL<66 && s.TOOLS>=55 && s.FAITH>=55,
+    quote:'你是 Token 佬。每月 AI 账单够吃两顿火锅，钉钉群里 Credits 求助贴必有你身影。Opus 一发布你冲第一个，Sonnet 都嫌掉档次。你的财富自由不是房和车，是不限额的 API Key。ROI 算下来其实还行，但财务部已经在群里艾特你了。',
+    advice:['搞清楚每个模型擅长什么，能让 Token 消耗砍一半','用 Claude Code 的 prompt cache，命中率每涨 10% 省 30% 钱','便宜模型 + 好 Prompt > 贵模型 + 烂 Prompt']},
+
+  {code:'TRIPLE', name:'御三家投机者', level:'L3', rare:'6.5%', slogan:'哪个便宜用哪个',
+    rule:s=>s.LEVEL>=46 && s.LEVEL<66 && s.TOOLS>=60,
+    quote:'你是御三家投机者。同时挂着 Claude / GPT / Gemini 三家会员，外加豆包 / 通义 / DeepSeek 备胎。哪家有新模型 24 小时内必试，哪家半价立刻迁移。能精准说出每家的强项弱项："Claude 写代码、GPT 写文、Gemini 看图"。Anthropic 的人来阿里都得先听你讲半小时。',
+    advice:['把"模型选型表"沉淀成内部文档，团队都能少走弯路','尝试 OpenRouter / 阿里百炼这种聚合平台，切换更丝滑','研究 API 价格差，量大场景能省一半']},
+
+  // L4
+  {code:'BOSS', name:'赛博包工头', level:'L4', rare:'4.8%', slogan:'5 个对话框给 AI 派活',
+    rule:s=>s.LEVEL>=64 && s.LEVEL<82 && s.SCENE>=62,
+    quote:'你是赛博包工头。在你眼里 Claude 不是工具，是不要工资的下属；QoderWork 不是 IDE，是永不顶嘴的开发；悟空不是模型，是你的随身分析师。同时开 5 个对话框给每个 AI 派活，自己只做最后一公里的拍板。基本没有 AI 干不了的活，只有你还没想到的派法。',
+    advice:['尝试 Claude Subagent —— 一个项目经理 Claude 调度多个专家 Claude，你只看汇报','把"派活逻辑"写成 SOP，团队新人直接抄','别忘了给 AI 下属"绩效面谈"——定期清理失效的 prompt 模板']},
+
+  {code:'WIZARD', name:'Prompt 老法师', level:'L4', rare:'5.3%', slogan:'Prompt 是新时代母语',
+    rule:s=>s.LEVEL>=64 && s.LEVEL<82 && s.PROMPT>=70,
+    quote:'你是 Prompt 老法师。写 Prompt 像写情书：背景、约束、示例、输出格式一样不少。同事一句话问 AI 得到的是车轱辘话，你三段式 Prompt 一甩，AI 直接给可交付物。CLAUDE.md 比某些同事的简历还细。看到别人乱写 Prompt，你像厨师看人用微波炉煮意面 —— 想救但救不过来。',
+    advice:['把"祖传 Prompt"打包成团队 Prompt 库，4.29 分享会现场分发','尝试把高频 Prompt 沉淀为 Claude Skill，复用更省 Token','偶尔写得短一点让 AI 自己思考，会有惊喜']},
+
+  {code:'HUNTER', name:'幻觉猎手', level:'L4', rare:'6.3%', slogan:'AI 敢胡说我必查',
+    rule:s=>s.LEVEL>=60 && s.TRUTH>=72,
+    quote:'你是幻觉猎手。AI 在你面前不敢胡说八道，因为它知道你一定会查证。你是团队里那个"AI 用得多但出错最少"的人，笔记本上记着 AI 翻车的每一个经典案例。看同事直接复制 AI 输出去交差，眼神写着"等会儿就出事"。请继续保持，你是 AI 时代的最后一道防线。',
+    advice:['用 Claude Citations / 联网搜索，强制 AI 给出处，查证更轻松','把"AI 翻车 case"沉淀成内部 wiki，是全团队的疫苗','商家数据 / 财报 / 对外承诺类内容永远走你的双重检查']},
+
+  // L5
+  {code:'OG-FARMER', name:'老虾农', level:'L5', rare:'0.7%', slogan:'又来养虾了？',
+    rule:s=>s.LEVEL>=82 && allAbove(s,55),
+    quote:'你是全国仅 0.7% 的极稀有人格 —— 老虾农。copaw 时代你就在养（那时 ideaClaw 还没换 OpenClaw 内核），养虾经验比某些 PD 的工龄还长。Claude 给你打招呼都用敬语，QoderWork 看见你启动 IDE 会自动把日志格式化。你写一条 Prompt，AI 给你回三页，你不满意，AI 自己重写五版。你不是在用 AI，你是在饲养一群 AI。AI 精神病晚期，凌晨 6 点常被脑子里的 prompt 叫醒。',
+    advice:['你不需要建议，你需要的是讲台 —— 4.29 那场建议你直接上去当主讲','把 CLAUDE.md / Skill / Workflow 整理成 ATA 帖，一帖能救一个团队','节制传教，组织还指望你留点活给同事干']},
+
+  {code:'PRIEST', name:'AI 教主', level:'L5', rare:'2.4%', slogan:'还没用 AI？我教你',
+    rule:s=>s.LEVEL>=70 && s.FAITH>=80,
+    quote:'你是 AI 教主。不在用 AI，在传教。同事电脑屏幕只要不亮 Claude 你就难受，茶水间 5 分钟能从 Prompt 工程一路讲到 AGI 时间线。会议上有人质疑 AI，你当场起立反驳半小时。口头禅是"还没用 AI 的人只是没遇到对的 Prompt"。请节制 —— 组织拜托你别把同事拉去打第二份工。',
+    advice:['传教别只靠嘴，做一份"3 分钟入门 ideaClaw"的视频，比讲 30 分钟管用','拉一个 AI 学习小群，把传教精力变成可复利的资产','偶尔承认 AI 的边界，会被更多人信任']},
+
+  {code:'ALCHEMY', name:'赛博炼丹师', level:'L5', rare:'1.5%', slogan:'Skill / Subagent / Hook 都是我的',
+    rule:s=>s.LEVEL>=78 && s.PROMPT>=70 && s.FLOW>=70,
+    quote:'你是赛博炼丹师 —— L5 段位的真正巫师。Claude Skill / Subagent / Hook / MCP 在你手里都是炼丹原料。能把简单 Prompt 编织成自主跑活的 Agent，能让 Claude Code 自己写代码、自己 review、自己提 PR。OpenClaw 文档对你来说是入门读物，看 Anthropic Cookbook 像看小学课本。',
+    advice:['把 Skill / Subagent 配方开源到 Aone Skill Hub，是真正的"AI 普惠"','尝试构建"自驱型 Agent"——给目标，让 AI 自己拆解 + 执行 + 反思','和 Anthropic 团队聊聊，你的实践值得反向输出']}
+];
+
+/* ===== 18 QUESTIONS（v6 全新题库） ===== */
+const QUESTIONS = [
+  // —— 前 6 题：暖场 ——
+  { tag:'WARM-UP', q:'凌晨 6 点你是被什么叫醒的？', opts:[
+    {t:'闹钟，你睡得很正常', s:{LEVEL:2}},
+    {t:'老板钉钉，你已经病了', s:{LEVEL:2,FAITH:1}},
+    {t:'脑子里突然蹦出"这个需求是不是能用 AI 跑"', s:{FAITH:4,FLOW:2,LEVEL:5}},
+    {t:'还没醒，9 点闹钟没响完不起', s:{LEVEL:1,FAITH:-1}}
+  ]},
+
+  { tag:'TOOL-STACK', q:'你日常挂着的 AI 工具数量？', opts:[
+    {t:'1 个，认准 ideaClaw / Claude 用到死', s:{FLOW:3,FAITH:1,LEVEL:3}},
+    {t:'2-3 个，按场景切（写文 / 写码 / 取数）', s:{TOOLS:2,SCENE:2,FLOW:2,LEVEL:4}},
+    {t:'5 个全装：ideaClaw + QoderWork + 悟空 + Qoder CLI + Claude Code', s:{TOOLS:4,FAITH:2,LEVEL:4}},
+    {t:'一个都没装，今天来云听课', s:{TOOLS:-2,FAITH:-2,LEVEL:1}}
+  ]},
+
+  // ★ Q3 岗位变体
+  { tag:'SCENE', variants:{
+    OPS: { q:'老板钉钉群里发"上个月华东 vs 华南转化率"，你？', opts:[
+      {t:'转给小Q："数据在桌面运营周报，分析后发回"，2 分钟回复', s:{SCENE:3,FLOW:3,LEVEL:5}},
+      {t:'跑回工位打开 Excel 翻数据', s:{LEVEL:2}},
+      {t:'@数据同学帮忙跑一下', s:{LEVEL:2,FAITH:-1}},
+      {t:'装作没看见', s:{LEVEL:1,FAITH:-2}}
+    ]},
+    PD: { q:'老板钉钉群里发"那 Feature 影响面 + 竞品怎么做？"，你？', opts:[
+      {t:'转给小Q："拉一下竞品 + 我们历史数据，3 段对比"，几分钟回', s:{SCENE:3,FLOW:3,LEVEL:5}},
+      {t:'跑回工位翻 PRD + 上 SimilarWeb', s:{LEVEL:2}},
+      {t:'@运营同学一起拉个会聊', s:{LEVEL:2,FAITH:-1}},
+      {t:'先回个"在看，下午同步"', s:{LEVEL:1,FAITH:-2}}
+    ]},
+    DEV: { q:'老板钉钉群里发"线上 P0，先定位再说"，你？', opts:[
+      {t:'让 Claude Code 拉日志 + 调用栈，5 分钟出根因', s:{SCENE:3,FLOW:3,LEVEL:5}},
+      {t:'打开 IDE 翻最近变更', s:{LEVEL:2}},
+      {t:'@运维 / @同事一起排查', s:{LEVEL:2}},
+      {t:'手动 grep 日志找半天', s:{LEVEL:1,FAITH:-2}}
+    ]},
+    BD: { q:'老板钉钉群里发"那个客户的合同进度怎样？"，你？', opts:[
+      {t:'让小Q 远程拉桌面客户文件夹 + 总结进度', s:{SCENE:3,FLOW:3,LEVEL:5}},
+      {t:'跑回工位翻邮件和合同', s:{LEVEL:2}},
+      {t:'@商务助理帮忙整理一份', s:{LEVEL:2,FAITH:-1}},
+      {t:'先回个"晚点详细同步"', s:{LEVEL:1,FAITH:-2}}
+    ]}
+  }},
+
+  { tag:'TOOL-RECOG', q:'同事问"ideaClaw 是干嘛的"，你的反应？', opts:[
+    {t:'张嘴就讲：淘天集团业务技术部的 AI 中台产品，能写文档 / 建会议 / 收群消息', s:{TOOLS:3,FAITH:2,SCENE:1,LEVEL:4}},
+    {t:'"好像是阿里的某个 AI？"', s:{LEVEL:2}},
+    {t:'反问"你不知道？"（其实你也不知道）', s:{TOOLS:-1,LEVEL:1}},
+    {t:'我天天用，但说不清卖点', s:{FLOW:2,LEVEL:3}}
+  ]},
+
+  { tag:'SOCIAL', q:'群里有人晒"我用 AI 一晚上做了 X"，你的反应？', opts:[
+    {t:'直接私信："你 prompt 给我看看，我也试"', s:{FAITH:2,PROMPT:1,TOOLS:1,LEVEL:4}},
+    {t:'收藏，明天再说（永远不会再说）', s:{LEVEL:2}},
+    {t:'转发到自己群里："看，AI 多牛"', s:{FAITH:3,SCENE:1,LEVEL:3}},
+    {t:'怀疑：是不是夸张了', s:{FAITH:-2,TRUTH:1,LEVEL:3}}
+  ]},
+
+  { tag:'TOKEN', q:'你的 Token 焦虑是哪一种？', opts:[
+    {t:'不够用，群里求助贴常客', s:{FAITH:2,FLOW:2,TOOLS:2,LEVEL:4}},
+    {t:'用不完，找不到更多场景去消耗', s:{FAITH:3,FLOW:3,SCENE:2,LEVEL:5}},
+    {t:'走部门财务申请 team SK，Credits 总归够', s:{LEVEL:3}},
+    {t:'Token 是啥，可以吃吗', s:{TOOLS:-2,LEVEL:1}}
+  ]},
+
+  // —— 中 6 题：进阶 ——
+  { tag:'PROMPT', q:'你写 Prompt 的"排面"通常是？', opts:[
+    {t:'"总结一下" / "写个方案"', s:{PROMPT:-2,FAITH:1,LEVEL:2}},
+    {t:'三五句把背景 / 目标 / 输出格式说清', s:{PROMPT:2,FLOW:1,LEVEL:3}},
+    {t:'角色 / 上下文 / 约束 / few-shot 示例 / 输出格式 五件套', s:{PROMPT:4,FLOW:2,LEVEL:5}},
+    {t:'整篇文档丢进去："你看着办"', s:{PROMPT:-1,FAITH:2,LEVEL:2}}
+  ]},
+
+  { tag:'TRUTH', q:'AI 给你一个看起来很对的数字 / 引用，你？', opts:[
+    {t:'必查，从不直接信', s:{TRUTH:4,LEVEL:4}},
+    {t:'凭直觉，明显离谱才查', s:{TRUTH:1,LEVEL:3}},
+    {t:'直接复制粘贴交差', s:{TRUTH:-3,FAITH:2,LEVEL:2}},
+    {t:'让 AI 自己再核对一遍就行', s:{TRUTH:-1,FAITH:2,LEVEL:2}}
+  ]},
+
+  // ★ Q9 岗位变体：你已经"完全交给 AI"的事
+  { tag:'AUTO', variants:{
+    OPS: { q:'下面哪件事你已经"完全交给 AI"做了？', opts:[
+      {t:'群消息分析 + 日报周报', s:{FLOW:3,SCENE:1,LEVEL:3}},
+      {t:'商家服务 FAQ + 群运营文案', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'活动策划 + 用户调研提纲', s:{SCENE:3,PROMPT:2,LEVEL:4}},
+      {t:'还没有，AI 只辅助查资料', s:{FLOW:-2,LEVEL:2}}
+    ]},
+    PD: { q:'下面哪件事你已经"完全交给 AI"做了？', opts:[
+      {t:'PRD 初稿 + 评审纪要', s:{FLOW:3,SCENE:1,LEVEL:3}},
+      {t:'竞品分析 + 用研提纲', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'数据看板设计 + 数据分析', s:{SCENE:3,PROMPT:2,LEVEL:4}},
+      {t:'还没有，AI 只辅助查资料', s:{FLOW:-2,LEVEL:2}}
+    ]},
+    DEV: { q:'下面哪件事你已经"完全交给 AI"做了？', opts:[
+      {t:'代码 review + SQL + 单元测试', s:{FLOW:3,SCENE:1,LEVEL:3}},
+      {t:'技术方案 + 文档撰写', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'调试 + 重构 + 性能优化', s:{SCENE:3,PROMPT:2,LEVEL:4}},
+      {t:'还没有，AI 只辅助查资料', s:{FLOW:-2,LEVEL:2}}
+    ]},
+    BD: { q:'下面哪件事你已经"完全交给 AI"做了？', opts:[
+      {t:'客户跟进话术 + 商务文书', s:{FLOW:3,SCENE:1,LEVEL:3}},
+      {t:'合同审 + 报价单整理', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'客户调研 + 行业分析', s:{SCENE:3,PROMPT:2,LEVEL:4}},
+      {t:'还没有，AI 只辅助查资料', s:{FLOW:-2,LEVEL:2}}
+    ]}
+  }},
+
+  { tag:'TRIO', q:'御三家（Claude / GPT / Gemini）你最常用？', opts:[
+    {t:'Claude，Anthropic 派，写代码 + 长文都靠它', s:{TOOLS:2,FAITH:2,LEVEL:4}},
+    {t:'GPT，老用户已肌肉记忆', s:{TOOLS:2,LEVEL:3}},
+    {t:'Gemini，1M Context + 多模态优势', s:{TOOLS:3,SCENE:1,LEVEL:4}},
+    {t:'国产为主：通义 / 豆包 / DeepSeek', s:{TOOLS:1,LEVEL:3}}
+  ]},
+
+  { tag:'KERNEL', q:'听到群里问"ideaClaw 内核为啥从 copaw 换成 OpenClaw"，你？', opts:[
+    {t:'张嘴就讲：copaw 是阿里云的，OpenClaw 是淘天升级版，能力起飞', s:{TOOLS:3,FAITH:2,LEVEL:5}},
+    {t:'跟着问"对啊，啥时候换的"', s:{LEVEL:3}},
+    {t:'换了？我没注意到', s:{LEVEL:2}},
+    {t:'不关心，能用就行', s:{LEVEL:1,FAITH:-1}}
+  ]},
+
+  // ★ Q12 岗位变体：装 N 用 N
+  { tag:'STACK-PATTERN', variants:{
+    OPS: { q:'你的 AI 工具"装 vs 用"是哪种模式？', opts:[
+      {t:'装 1 用 1：ideaClaw 一个走天下', s:{FLOW:3,LEVEL:3}},
+      {t:'装 3 用 3：写文 / 取数 / 看板各一', s:{TOOLS:2,FLOW:2,LEVEL:4}},
+      {t:'装 5 用 1：仰卧起坐典型', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
+      {t:'装 0 用 0：人肉打天下', s:{TOOLS:-2,LEVEL:1}}
+    ]},
+    PD: { q:'你的 AI 工具"装 vs 用"是哪种模式？', opts:[
+      {t:'装 1 用 1：QoderWork 走 PRD + 用研全流程', s:{FLOW:3,LEVEL:3}},
+      {t:'装 3 用 3：PRD / 调研 / 方案各一', s:{TOOLS:2,FLOW:2,LEVEL:4}},
+      {t:'装 5 用 1：好奇心爆棚但落地为零', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
+      {t:'装 0 用 0：传统 PD 一名', s:{TOOLS:-2,LEVEL:1}}
+    ]},
+    DEV: { q:'你的 AI 工具"装 vs 用"是哪种模式？', opts:[
+      {t:'装 1 用 1：Claude Code 一个搞定', s:{FLOW:3,LEVEL:3}},
+      {t:'装 3 用 3：Coding / 调试 / 文档分工', s:{TOOLS:2,FLOW:2,LEVEL:4}},
+      {t:'装 5 用 1：试遍后退回 ChatGPT', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
+      {t:'装 0 用 0：Vim + 手撸', s:{TOOLS:-2,LEVEL:1}}
+    ]},
+    BD: { q:'你的 AI 工具"装 vs 用"是哪种模式？', opts:[
+      {t:'装 1 用 1：ideaClaw 处理客户 + 文书', s:{FLOW:3,LEVEL:3}},
+      {t:'装 3 用 3：客户分析 / 合同审 / 报价分工', s:{TOOLS:2,FLOW:2,LEVEL:4}},
+      {t:'装 5 用 1：装一堆没真用过', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
+      {t:'装 0 用 0：Excel 走天下', s:{TOOLS:-2,LEVEL:1}}
+    ]}
+  }},
+
+  // —— 后 6 题：高阶 ——
+  { tag:'OPENCLAW', q:'听到 OpenClaw 你想到的是？', opts:[
+    {t:'淘天自研的 AI 引擎，ideaClaw 从阿里云 copaw 换到它后我已上 Skill', s:{FLOW:3,PROMPT:2,LEVEL:5}},
+    {t:'阿里集团内部的 AI 内核产品，对标 Claude Code 系列', s:{TOOLS:2,FAITH:1,LEVEL:4}},
+    {t:'听过名字，没研究', s:{LEVEL:3}},
+    {t:'是 Claude 的某个新产品吗？', s:{LEVEL:1}}
+  ]},
+
+  { tag:'CONTEXT', q:'听到 1M Context Window 你想到的是？', opts:[
+    {t:'终于可以一次塞进整个 repo 做架构 review', s:{FLOW:2,SCENE:2,LEVEL:5}},
+    {t:'又有新模型？哪家发的', s:{TOOLS:1,LEVEL:4}},
+    {t:'1M 是百万 token，处理长文有用', s:{LEVEL:3}},
+    {t:'Context 是啥', s:{LEVEL:1}}
+  ]},
+
+  { tag:'SKILL-MCP', q:'Skill / MCP / ODPSCMD 你能玩到哪一步？', opts:[
+    {t:'写过自己的 Skill（如 ODPSCMD 自然语言取数），挂 Aone Skill Hub', s:{FLOW:3,PROMPT:2,LEVEL:5}},
+    {t:'配过钉钉文档 / AI 表格 MCP，让 AI 直接读写钉钉文档', s:{TOOLS:2,FLOW:2,LEVEL:4}},
+    {t:'装过别人写的 Skill 用，自己没配过', s:{LEVEL:3}},
+    {t:'MCP / Skill / ODPS 都没听过', s:{LEVEL:1}}
+  ]},
+
+  { tag:'BU-CULTURE', q:'看到 BU 内部 AI 主题课通知，你？', opts:[
+    {t:'第一时间报名，带问题做笔记去', s:{FAITH:3,SCENE:2,FLOW:1,LEVEL:4}},
+    {t:'报名了，等录播', s:{FAITH:0,LEVEL:3}},
+    {t:'有时间再说', s:{LEVEL:2}},
+    {t:'群里 200 条 AI 讨论，一条没看', s:{LEVEL:1,FAITH:-2}}
+  ]},
+
+  // ★ Q17 岗位变体：典型工作流
+  { tag:'WORKFLOW', variants:{
+    OPS: { q:'你处理 200+ 商家群消息的方式？', opts:[
+      {t:'悟空 DWS 命令收群 → AI 分析 → 配 MCP 自动写入钉钉文档日报', s:{FLOW:4,SCENE:3,LEVEL:5}},
+      {t:'ideaClaw 在钉钉里直接读群 → 简单总结', s:{FLOW:2,LEVEL:4}},
+      {t:'一条条复制到 AI 让它总结', s:{LEVEL:3}},
+      {t:'一条条人工看', s:{FLOW:-2,LEVEL:1}}
+    ]},
+    PD: { q:'你出竞品分析报告的方式？', opts:[
+      {t:'AI 全自动：抓数据 → 比较 → 写洞察 → 发钉钉文档', s:{FLOW:4,SCENE:3,LEVEL:5}},
+      {t:'AI 出框架，自己填充', s:{FLOW:2,LEVEL:4}},
+      {t:'AI 帮我总结别人的报告', s:{LEVEL:3}},
+      {t:'自己写，AI 不参与', s:{FLOW:-2,LEVEL:1}}
+    ]},
+    DEV: { q:'你做技术调研的方式？', opts:[
+      {t:'Claude Code 自己拉 repo + 读代码 + 出方案', s:{FLOW:4,SCENE:3,LEVEL:5}},
+      {t:'AI 帮分析关键模块，自己整合', s:{FLOW:2,LEVEL:4}},
+      {t:'AI 帮搜文档', s:{LEVEL:3}},
+      {t:'自己 Google + 看源码', s:{FLOW:-2,LEVEL:1}}
+    ]},
+    BD: { q:'你跟进客户合同的方式？', opts:[
+      {t:'小Q 远程改 PPT + AI 审条款 + 自动发回钉钉', s:{FLOW:4,SCENE:3,LEVEL:5}},
+      {t:'AI 帮改 PPT，合同自己审', s:{FLOW:2,LEVEL:4}},
+      {t:'AI 帮搜模板', s:{LEVEL:3}},
+      {t:'全程手工', s:{FLOW:-2,LEVEL:1}}
+    ]}
+  }},
+
+  { tag:'TROUBLESHOOT', q:'下面 3 个 AI 工具卡点你"一秒就懂解法"的有几个？', opts:[
+    {t:'三个都懂：悟空多组织授权 / 钉钉文档 MCP 没权限选错组织 / QoderWork 企业专属等打标', s:{FLOW:3,TOOLS:3,LEVEL:5}},
+    {t:'懂 1-2 个，剩下要查文档', s:{TOOLS:2,LEVEL:4}},
+    {t:'听过这些坑，没具体踩过', s:{LEVEL:3}},
+    {t:'这些都是啥东西', s:{LEVEL:1}}
+  ]}
+];
+
+/* ===== HELPERS ===== */
+function avg(s){return ['PROMPT','TOOLS','SCENE','TRUTH','FLOW','FAITH'].map(k=>s[k]||0).reduce((a,b)=>a+b,0)/6}
+function allAbove(s,n){return ['PROMPT','TOOLS','SCENE','TRUTH','FLOW','FAITH'].every(k=>(s[k]||0)>=n)}
+const $ = id => document.getElementById(id);
+const findP = code => PERSONAS.find(p=>p.code===code);
+const findLevel = code => LEVELS.find(l=>l.code===code);
+
+function avatarHTML(p){
+  const svg = ICONS[p.code] || '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#fff"/></svg>';
+  // img 默认显示；onerror 时隐藏 img 并显示 SVG；svg-fb 默认隐藏
+  return `<img src="image/${p.code}.png" alt="${p.name}"
+    style="width:100%;height:100%;object-fit:cover;display:block;position:relative;z-index:1"
+    onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+    <div class="svg-fb" style="display:none">${svg}</div>`;
+}
+
+function getQContent(q, role){
+  return q.variants ? q.variants[role] : q;
+}
+
+/* ===== CONFIG · 修改这里接入后端 ===== */
+const CONFIG = {
+  // 本地开发：'http://localhost:3000'
+  // 生产环境：替换为你的阿里云 FC / 内网服务地址
+  API_BASE: ''  // 留空 = 纯本地 localStorage 模式
+};
+
+/* ===== API 层 · 失败自动降级到 localStorage ===== */
+const API = {
+  async get(path, fallback){
+    if(!CONFIG.API_BASE) return fallback;
+    try {
+      const r = await fetch(CONFIG.API_BASE + path, { headers:{'Accept':'application/json'} });
+      if(!r.ok) throw new Error(r.status);
+      return r.json();
+    } catch(e) { console.warn('API GET', path, e.message); return fallback; }
+  },
+  async post(path, body){
+    if(!CONFIG.API_BASE){
+      // localStorage 降级存储
+      const key = 'aibti_results';
+      const arr = JSON.parse(localStorage.getItem(key)||'[]');
+      arr.push({...body, id:Date.now(), ts:new Date().toISOString()});
+      localStorage.setItem(key, JSON.stringify(arr));
+      return { ok:true, total:arr.length };
+    }
+    try {
+      const r = await fetch(CONFIG.API_BASE + path, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body)
+      });
+      if(!r.ok) throw new Error(r.status);
+      return r.json();
+    } catch(e) { console.warn('API POST', path, e.message); return { ok:false }; }
+  }
+};
+
+let state = {
+  idx:0, role:'OPS', answers:Array(QUESTIONS.length).fill(null),
+  bu:'', dept:'', challenge:null
+};
+
+/* URL params 解析挑战链接 ?ch=NAME&lv=L4&p=CODE */
+(function parseChallenge(){
+  const u = new URL(location.href);
+  const ch = u.searchParams.get('ch');
+  const lv = u.searchParams.get('lv');
+  const p  = u.searchParams.get('p');
+  if(ch && lv && p){
+    state.challenge = { name:decodeURIComponent(ch), level:lv, code:p };
+  }
+})();
+
+/* ===== INIT ===== */
+(function(){
+  // 挑战横幅渲染
+  if(state.challenge){
+    const ch = state.challenge;
+    const challenger = findP(ch.code);
+    if(challenger){
+      $('challengeBanner').classList.remove('hidden');
+      $('cbAvatar').textContent = ch.level;
+      $('cbText').innerHTML = `<b>${ch.name}</b> 邀你 PK · 他是 <b>${ch.level} ${challenger.name}</b><br/>「${challenger.slogan}」 · 你 AI 段位有他高吗？`;
+    }
+  }
+
+  // 从后端拉统计数据（proof + ticker），降级用本地数据
+  API.get('/api/stats', null).then(stats => {
+    if(stats && stats.total){
+      $('proofN').textContent = stats.total.toLocaleString();
+      if(stats.ogPct) $('proofOgPct').textContent = stats.ogPct;
+    } else {
+      // localStorage 模式：读本地结果数
+      const arr = JSON.parse(localStorage.getItem('aibti_results')||'[]');
+      $('proofN').textContent = arr.length > 0 ? arr.length.toLocaleString() : '—';
+    }
+  });
+
+  API.get('/api/ticker', null).then(data => {
+    const lines = (data && data.lines && data.lines.length) ? data.lines : TICKER_LINES;
+    let idx = 0;
+    function showTicker(){
+      const line = lines[idx % lines.length];
+      const t = new Date();
+      const time = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+      const text = typeof line === 'string' ? line
+        : `一位${line.bu || '阿里'} ${line.role || '同学'} 测出 ${line.level} ${line.personaName || ''}`;
+      $('tickerLine').innerHTML = `<span class="tk-time">${time}</span><span class="tk-bu">${text}</span>`;
+      $('tickerLine').style.animation = 'none';
+      void $('tickerLine').offsetWidth;
+      $('tickerLine').style.animation = 'tickerSlide 5s ease-in-out';
+      idx++;
+    }
+    showTicker();
+    setInterval(showTicker, 5000);
+  });
+
+  // BU / 部门输入
+  $('inpBU').oninput = e => state.bu = e.target.value.trim();
+  $('inpDept').oninput = e => state.dept = e.target.value.trim();
+
+  document.querySelectorAll('.role').forEach(el=>{
+    el.onclick = ()=>{
+      document.querySelectorAll('.role').forEach(x=>x.classList.remove('sel'));
+      el.classList.add('sel');
+      state.role = el.dataset.role;
+    };
+  });
+
+  $('ladder').innerHTML = LEVELS.map(l=>`
+    <div class="lv" data-level="${l.code}">
+      <div class="lv-circle" style="background:${l.color}">${l.code}</div>
+      <div class="lv-name">${l.name}</div>
+    </div>`).join('');
+  $('ladder').querySelectorAll('.lv').forEach(el=>{
+    el.onclick = ()=> { go('gallery'); setTimeout(()=>{ const t=document.querySelector(`[data-section="${el.dataset.level}"]`); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); },100); };
+  });
+
+  // BU 卷王榜
+  $('buScroll').innerHTML = BUS.map(b=>`
+    <div class="bu-card">
+      <div class="bu-rank">${b.rank}</div>
+      <div class="bu-name">${b.name}</div>
+      <div class="bu-desc">${b.desc}</div>
+    </div>`).join('');
+
+  const hot = [...PERSONAS].sort((a,b)=>parseFloat(a.rare)-parseFloat(b.rare)).slice(0,3);
+  $('hotScroll').innerHTML = hot.map(p=>`
+    <div class="hot-card" data-code="${p.code}">
+      <div class="hot-meta"><span>${p.code}</span><span class="lvtag">${p.level}</span></div>
+      <div class="avatar">${avatarHTML(p)}</div>
+      <div class="hot-name">${p.name}</div>
+      <div class="hot-slogan">${p.slogan}</div>
+    </div>`).join('');
+  $('hotScroll').querySelectorAll('.hot-card').forEach(el=>{
+    el.onclick = ()=> openModal(el.dataset.code);
+  });
+
+  $('galSections').innerHTML = LEVELS.map(l=>{
+    const ps = PERSONAS.filter(p=>p.level===l.code);
+    return `<div class="gal-section" data-section="${l.code}">
+      <div class="gal-section-head">
+        <div class="gal-section-num" style="background:${l.color}">${l.code}</div>
+        <div class="gal-section-name">${l.name}</div>
+        <div class="gal-section-desc">${l.desc} · ${ps.length} 个角色</div>
+      </div>
+      <div class="gal-grid">${ps.map(p=>`
+        <div class="gal-card" data-code="${p.code}">
+          <div class="gc-rare">${p.rare}</div>
+          <div class="avatar">${avatarHTML(p)}</div>
+          <div class="gc-name">${p.name}</div>
+          <div class="gc-slogan">${p.slogan}</div>
+        </div>`).join('')}</div>
+    </div>`;
+  }).join('');
+  $('galSections').querySelectorAll('.gal-card').forEach(el=>{
+    el.onclick = ()=> openModal(el.dataset.code);
+  });
+})();
+
+/* ===== QUIZ ===== */
+function renderQuestion(){
+  const i = state.idx;
+  const q = QUESTIONS[i];
+  const c = getQContent(q, state.role);
+  const isVariant = !!q.variants;
+  $('barFill').style.width = ((i+1)/QUESTIONS.length*100)+'%';
+  $('barNum').textContent = (i+1)+' / '+QUESTIONS.length;
+
+  const opts = c.opts.map((o,j)=>{
+    const letter = ['A','B','C','D'][j];
+    return `<button class="opt" data-i="${j}">
+      <span class="opt-letter">${letter}</span>
+      <span>${o.t}</span>
+    </button>`;
+  }).join('');
+
+  const roleTag = isVariant ? `<span class="role-tag">${ROLES[state.role].name}专属</span>` : '';
+  $('qBody').innerHTML = `
+    <div class="anim">
+      <div class="q-tag">Q${String(i+1).padStart(2,'0')} · ${q.tag} ${roleTag}</div>
+      <div class="q-text">${c.q}</div>
+      <div class="options">${opts}</div>
+    </div>`;
+
+  $('qBody').querySelectorAll('.opt').forEach(el=>{
+    el.onclick = ()=>{
+      $('qBody').querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+      el.classList.add('sel');
+      state.answers[i] = +el.dataset.i;
+      setTimeout(()=>{
+        if(state.idx < QUESTIONS.length-1){
+          state.idx++;
+          renderQuestion();
+        } else {
+          go('result');
+          renderResult();
+        }
+      }, 200);
+    };
+  });
+  window.scrollTo(0,0);
+}
+
+/* ===== COMPUTE ===== */
+function computeScores(){
+  const dimKeys = ['PROMPT','TOOLS','SCENE','TRUTH','FLOW','FAITH'];
+  const raw = {PROMPT:0,TOOLS:0,SCENE:0,TRUTH:0,FLOW:0,FAITH:0};
+  const maxByDim = {PROMPT:0,TOOLS:0,SCENE:0,TRUTH:0,FLOW:0,FAITH:0};
+  const minByDim = {PROMPT:0,TOOLS:0,SCENE:0,TRUTH:0,FLOW:0,FAITH:0};
+  let levelSum = 0, levelCount = 0;
+
+  QUESTIONS.forEach(q=>{
+    const c = getQContent(q, state.role);
+    const dimMax={},dimMin={};
+    c.opts.forEach(o=>{
+      Object.entries(o.s||{}).forEach(([k,v])=>{
+        if(k==='LEVEL') return;
+        if(dimMax[k]===undefined||v>dimMax[k]) dimMax[k]=v;
+        if(dimMin[k]===undefined||v<dimMin[k]) dimMin[k]=v;
+      });
+    });
+    Object.keys(dimMax).forEach(k=>{ maxByDim[k]+=Math.max(0,dimMax[k]); });
+    Object.keys(dimMin).forEach(k=>{ minByDim[k]+=Math.min(0,dimMin[k]); });
+  });
+
+  state.answers.forEach((ai,qi)=>{
+    if(ai===null) return;
+    const c = getQContent(QUESTIONS[qi], state.role);
+    const s = c.opts[ai].s||{};
+    Object.entries(s).forEach(([k,v])=>{
+      if(k==='LEVEL'){ levelSum+=v; levelCount++; }
+      else { raw[k]=(raw[k]||0)+v; }
+    });
+  });
+
+  const norm = {};
+  dimKeys.forEach(k=>{
+    const span = (maxByDim[k]||1) - (minByDim[k]||0);
+    const v = (raw[k]-(minByDim[k]||0))/(span||1);
+    norm[k] = Math.max(0,Math.min(100,Math.round(v*100)));
+  });
+  norm.LEVEL = levelCount>0 ? Math.max(0,Math.min(100,Math.round((levelSum/levelCount-1)/4*100))) : 0;
+  return norm;
+}
+
+function pickPersona(scores){
+  for(const p of PERSONAS){ if(p.rule(scores)) return p; }
+  const lv = LEVELS.find(l=>scores.LEVEL>=l.range[0] && scores.LEVEL<l.range[1]) || LEVELS[1];
+  const candidates = PERSONAS.filter(p=>p.level===lv.code);
+  return candidates[Math.floor(Math.random()*candidates.length)] || PERSONAS[0];
+}
+
+function drawRadar(scores){
+  const cx=140,cy=140,R=98;
+  const keys=['PROMPT','TOOLS','SCENE','TRUTH','FLOW','FAITH'];
+  const N=keys.length;
+  let grids='';
+  [0.25,0.5,0.75,1].forEach(r=>{
+    const p = keys.map((_,i)=>{
+      const a=Math.PI*2*i/N - Math.PI/2;
+      return (cx+Math.cos(a)*R*r).toFixed(1)+','+(cy+Math.sin(a)*R*r).toFixed(1);
+    }).join(' ');
+    grids += `<polygon points="${p}" fill="none" stroke="rgba(255,255,255,${r===1?.12:.05})" stroke-width="1"/>`;
+  });
+  let axes='', labels='', pts=[];
+  keys.forEach((k,i)=>{
+    const a=Math.PI*2*i/N - Math.PI/2;
+    const x=cx+Math.cos(a)*R, y=cy+Math.sin(a)*R;
+    axes += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,.05)" stroke-width="1"/>`;
+    const lx=cx+Math.cos(a)*(R+22), ly=cy+Math.sin(a)*(R+22)+4;
+    labels += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" fill="#8a8e9a" font-size="11" text-anchor="middle">${DIMS[k]}</text>`;
+    const v=scores[k]/100;
+    pts.push((cx+Math.cos(a)*R*v).toFixed(1)+','+(cy+Math.sin(a)*R*v).toFixed(1));
+  });
+  const polyFill = `<polygon points="${pts.join(' ')}" fill="#d4a574" fill-opacity=".25" stroke="#d4a574" stroke-width="1.5"/>`;
+  const dots = pts.map(p=>{const[x,y]=p.split(',');return `<circle cx="${x}" cy="${y}" r="3" fill="#d4a574"/>`}).join('');
+  $('radar').innerHTML = `${grids}${axes}${polyFill}${dots}${labels}`;
+}
+
+/* ===== RESULT ===== */
+function renderResult(){
+  const scores = computeScores();
+  const p = pickPersona(scores);
+  const role = ROLES[state.role];
+  const lv = findLevel(p.level);
+  $('rAvatar').innerHTML = avatarHTML(p);
+  $('rLvChip').textContent = p.level;
+  $('rLvChip').style.background = lv.color;
+  $('rPrefix').textContent = `${role.name} · ${p.name}`;
+  $('rName').textContent = `${role.name}${p.name}`;
+  $('rSlogan').textContent = `"${p.slogan}"`;
+  $('rMeta').innerHTML = `<span>${p.level}</span><span class="sep">·</span><span>${lv.name}</span><span class="sep">·</span><span>稀有度 ${p.rare}</span>`;
+  $('rQuote').textContent = p.quote;
+  $('rCross').textContent = `作为${role.name}，你${role.ext}。`;
+  drawRadar(scores);
+  $('dimList').innerHTML = ['PROMPT','TOOLS','SCENE','TRUTH','FLOW','FAITH'].map(k=>`
+    <div class="dim-row">
+      <div class="dim-name">${DIMS[k]}</div>
+      <div class="dim-bar"><div class="dim-bar-fill" style="width:${scores[k]}%"></div></div>
+      <div class="dim-val">${scores[k]}</div>
+    </div>`).join('');
+  $('adviceList').innerHTML = p.advice.map(a=>`<li>${a}</li>`).join('');
+  $('ecNum').textContent = PERSONAS.length - 1;
+  $('shareQuote').textContent = `【AIBTI】我是 ${p.level} · ${role.name}${p.name}（全国仅 ${p.rare}）\n${p.slogan}\n\n来测测你的 AI 段位 →\n[此处贴链接]`;
+  $('ctaTitle').textContent = `「${role.name}${p.name}」专场 AI 分享会`;
+
+  // 部门对线榜（如果填了部门）
+  if(state.dept){
+    // 用 dept 字符串生成稳定伪数据
+    const seed = state.dept.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+    const total = 8 + (seed % 16); // 8-23 人
+    const lvNum = parseInt(p.level.slice(1));
+    const myRank = Math.max(1, Math.round(total * (5-lvNum)/5) - (seed%3));
+    const beatPct = Math.round((total - myRank) / total * 100);
+    $('compareCard').classList.remove('hidden');
+    $('ccBu').textContent = (state.bu || '阿里集团') + ' · ' + state.dept;
+    $('ccRankNum').textContent = '#' + myRank;
+    $('ccRankText').innerHTML = `你部门已 <b>${total}</b> 人测过<br/>你超过了 <b>${beatPct}%</b> 的同事`;
+    setTimeout(()=>{
+      $('ccBarFill').style.width = beatPct + '%';
+      $('ccBarText').textContent = `Beat ${beatPct}% / ${total} 人`;
+    }, 100);
+  } else {
+    $('compareCard').classList.add('hidden');
+  }
+
+  // 挑战链接生成
+  const challengerName = state.dept || (state.bu || '神秘同学');
+  const url = `${location.origin}${location.pathname}?ch=${encodeURIComponent(challengerName)}&lv=${p.level}&p=${p.code}`;
+  $('coQuote').textContent = url;
+  state.challengeURL = url;
+  state.challengerName = challengerName;
+
+  state.lastResult = {p,scores,role,lv};
+
+  // 提交结果到后端（异步，不阻塞 UI）
+  API.post('/api/submit', {
+    bu:     state.bu || '未填写',
+    dept:   state.dept || '未填写',
+    role:   state.role,
+    level:  p.level,
+    personaCode: p.code,
+    personaName: p.name,
+    scores: scores
+  }).then(res => {
+    // 提交成功后更新 proof 计数
+    if(res && res.total) $('proofN').textContent = res.total.toLocaleString();
+  });
+
+  window.scrollTo(0,0);
+}
+
+function openModal(code){
+  const p = findP(code);
+  const lv = findLevel(p.level);
+  $('modalBody').innerHTML = `
+    <div class="r-header" style="margin-bottom:18px">
+      <div class="eyebrow" style="margin-bottom:14px">PERSONA DETAIL</div>
+      <div class="r-avatar-wrap" style="margin-bottom:18px">
+        <div class="r-avatar">${avatarHTML(p)}</div>
+        <div class="r-level-chip" style="background:${lv.color}">${p.level}</div>
+      </div>
+      <div class="r-prefix">${p.code}</div>
+      <div class="r-name">${p.name}</div>
+      <div class="r-slogan">"${p.slogan}"</div>
+      <div><div class="r-meta-row"><span>${p.level}</span><span class="sep">·</span><span>${lv.name}</span><span class="sep">·</span><span>稀有度 ${p.rare}</span></div></div>
+    </div>
+    <div class="card"><div class="card-title">人格解读</div><p class="r-quote">${p.quote}</p></div>
+    <div class="card"><div class="card-title">建议</div>
+      <ul class="advice-list">${p.advice.map(a=>`<li>${a}</li>`).join('')}</ul>
+    </div>`;
+  $('modal').classList.remove('hidden');
+}
+
+function go(id){
+  ['welcome','quiz','result','gallery'].forEach(s=>$(s).classList.add('hidden'));
+  $(id).classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+$('btnStart').onclick = ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('quiz'); renderQuestion(); };
+$('btnStartFromGal').onclick = ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('quiz'); renderQuestion(); };
+$('btnRetry').onclick = ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('welcome'); };
+$('btnGallery2').onclick = ()=> go('gallery');
+$('btnBack').onclick = ()=> go(state.lastResult ? 'result' : 'welcome');
+$('lnkGallery').onclick = (e)=>{ e.preventDefault(); go('gallery'); };
+$('lnkGallery2').onclick = ()=> go('gallery');
+$('exploreCard').onclick = ()=> go('gallery');
+$('btnCloseModal').onclick = ()=> $('modal').classList.add('hidden');
+$('modal').onclick = (e)=>{ if(e.target.id==='modal') $('modal').classList.add('hidden'); };
+$('btnShare').onclick = ()=>{
+  const r = state.lastResult; if(!r) return;
+  const text = `【AIBTI】我是 ${r.p.level} · ${r.role.name}${r.p.name}（全国仅 ${r.p.rare}）\n${r.p.slogan} —— ${r.p.quote.split('。')[0]}。\n\n来测测你的 AI 段位 →\n${state.challengeURL || '[此处贴链接]'}`;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>{
+      $('btnShare').textContent='已复制';
+      setTimeout(()=>$('btnShare').textContent='复制话术',2000);
+    });
+  } else { alert(text); }
+};
+
+/* 复制挑战链接 */
+$('btnChallenge').onclick = ()=>{
+  if(!state.challengeURL) return;
+  const r = state.lastResult;
+  const text = `【AIBTI · 挑战】${state.challengerName} 邀你 PK（我是 ${r.p.level} · ${r.role.name}${r.p.name}）\n\n点链接看看你的 AI 段位有没有我高 →\n${state.challengeURL}`;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>{
+      $('btnChallenge').textContent='已复制 · 去钉群战书';
+      setTimeout(()=>$('btnChallenge').textContent='复制挑战链接',2200);
+    });
+  } else { alert(text); }
+};
+
+/* 分享海报 */
+$('btnShareImage').onclick = ()=>{
+  const r = state.lastResult; if(!r) return;
+  renderShareImage(r);
+  $('shareModal').classList.remove('hidden');
+};
+$('btnCloseShare').onclick = ()=> $('shareModal').classList.add('hidden');
+$('btnCopyShareText').onclick = ()=> $('btnShare').click();
+
+function renderShareImage(r){
+  const {p, scores, role, lv} = r;
+  // 雷达 SVG
+  const cx=100,cy=100,R=70;
+  const keys=['PROMPT','TOOLS','SCENE','TRUTH','FLOW','FAITH'];
+  const N=keys.length;
+  let grids='';
+  [0.25,0.5,0.75,1].forEach(rr=>{
+    const pts = keys.map((_,i)=>{
+      const a=Math.PI*2*i/N - Math.PI/2;
+      return (cx+Math.cos(a)*R*rr).toFixed(1)+','+(cy+Math.sin(a)*R*rr).toFixed(1);
+    }).join(' ');
+    grids += `<polygon points="${pts}" fill="none" stroke="rgba(255,255,255,${rr===1?.18:.08})" stroke-width="1"/>`;
+  });
+  let labels='', pts=[];
+  keys.forEach((k,i)=>{
+    const a=Math.PI*2*i/N - Math.PI/2;
+    const lx=cx+Math.cos(a)*(R+14), ly=cy+Math.sin(a)*(R+14)+3;
+    labels += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" fill="#8a8e9a" font-size="9" text-anchor="middle">${DIMS[k]}</text>`;
+    const v=scores[k]/100;
+    pts.push((cx+Math.cos(a)*R*v).toFixed(1)+','+(cy+Math.sin(a)*R*v).toFixed(1));
+  });
+  const radarSVG = `<svg viewBox="0 0 200 200" width="200" height="200">${grids}<polygon points="${pts.join(' ')}" fill="#d4a574" fill-opacity=".25" stroke="#d4a574" stroke-width="1.5"/>${labels}</svg>`;
+
+  $('shareRender').innerHTML = `
+    <div class="scr-brand">A · I · B · T · I</div>
+    <div class="scr-avatar">${avatarHTML(p)}</div>
+    <div class="scr-prefix">${role.name} · ${p.name}</div>
+    <div class="scr-name">${role.name}${p.name}</div>
+    <div class="scr-slogan">"${p.slogan}"</div>
+    <div class="scr-meta"><span class="scr-chip">${p.level} · ${lv.name} · 稀有度 ${p.rare}</span></div>
+    <div class="scr-radar">${radarSVG}</div>
+    <div class="scr-foot">扫码测你的 AI 段位 · <b>4.29 AI 分享会前必测</b></div>`;
+}
+</script>
+</body>
+</html>

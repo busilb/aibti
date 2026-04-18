@@ -1,0 +1,12 @@
+{
+  "name": "aibti",
+  "version": "1.0.0",
+  "description": "AIBTI · 你是哪种 AI 打工人 · 阿里内部 AI 能力测评",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "ADMIN_PWD=aibti2025 node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
