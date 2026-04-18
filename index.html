@@ -363,10 +363,17 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 .bottom-nav .btn{flex:1;font-size:13px}
 
 /* ── 分享 Modal ── */
-.share-modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.9);backdrop-filter:blur(16px);
-  z-index:200;display:flex;align-items:center;justify-content:center;
-  padding:20px;flex-direction:column;gap:16px;overflow-y:auto}
+.share-modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.95);backdrop-filter:blur(20px);
+  z-index:200;display:flex;align-items:flex-start;justify-content:center;
+  padding:0;flex-direction:column;overflow-y:auto}
 .share-modal-mask.hidden{display:none}
+.share-modal-header{display:flex;justify-content:space-between;align-items:center;
+  padding:16px 20px;width:100%;flex-shrink:0}
+.share-modal-title{font-size:16px;font-weight:700;color:#fff}
+.share-modal-close-btn{background:rgba(255,255,255,.1);border:none;width:32px;height:32px;
+  border-radius:50%;color:#fff;font-size:16px;cursor:pointer;display:flex;
+  align-items:center;justify-content:center}
+.share-img-wrap{width:100%;padding:0 20px;flex-shrink:0;position:relative;min-height:80px}
 .share-card-render{width:100%;max-width:340px;background:linear-gradient(160deg,#1a0a2e,#0d0015);
   border:1px solid rgba(168,85,247,.35);border-radius:24px;padding:26px 22px;color:var(--text);
   position:relative;overflow:hidden;box-shadow:0 0 60px rgba(168,85,247,.2)}
@@ -400,17 +407,16 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
   border-top:1px solid var(--border);padding-top:12px;position:relative;z-index:1}
 .scr-foot b{background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;font-weight:700}
-.share-modal-tip{color:rgba(255,255,255,.8);font-size:13px;text-align:center;
-  line-height:1.5;max-width:340px}
-.share-modal-tip b{background:var(--g1);-webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;background-clip:text;font-weight:700}
-.share-modal-actions{display:flex;gap:10px;width:100%;max-width:340px}
-.share-modal-actions button{flex:1;padding:13px;border-radius:14px;
+.share-modal-tip{color:rgba(255,255,255,.7);font-size:12px;text-align:center;
+  line-height:1.6;padding:12px 20px 0;width:100%}
+.share-modal-tip b{color:#fff;font-weight:700}
+.share-modal-actions{display:flex;gap:10px;padding:14px 20px 32px;width:100%;flex-shrink:0}
+.share-modal-actions button,.share-modal-actions a{flex:1;padding:14px;border-radius:14px;
   border:1px solid var(--border-hl);background:rgba(255,255,255,.08);
-  color:var(--text);font-family:inherit;font-size:13px;cursor:pointer;font-weight:600;
-  backdrop-filter:blur(10px)}
-.share-modal-actions button.primary{background:var(--g1);color:#fff;border:none;
-  box-shadow:0 6px 20px rgba(168,85,247,.4)}
+  color:var(--text);font-family:inherit;font-size:14px;cursor:pointer;font-weight:600;
+  text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center}
+.share-modal-actions a.primary,.share-modal-actions button.primary{
+  background:var(--g1);color:#fff;border:none;box-shadow:0 6px 20px rgba(168,85,247,.4)}
 
 /* ── 图鉴 ── */
 #gallery{padding:28px 20px 44px}
@@ -616,14 +622,21 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 
 <!-- 分享海报 MODAL -->
 <div class="share-modal-mask hidden" id="shareModal">
-  <div class="share-card-render" id="shareRender"></div>
-  <div class="share-modal-tip">
-    <b>长按图片保存</b> · 发钉群 / 朋友圈<br/>
-    PC 上右键另存为图片
+  <div class="share-modal-header">
+    <span class="share-modal-title">专属海报</span>
+    <button class="share-modal-close-btn" id="btnCloseShare">✕</button>
+  </div>
+  <div class="share-img-wrap">
+    <img id="shareImg" alt="海报生成中..." style="width:100%;border-radius:16px;display:block"/>
+    <div id="shareImgLoading" style="color:rgba(255,255,255,.6);font-size:13px;text-align:center;padding:40px 0">生成中...</div>
+  </div>
+  <div class="share-modal-tip" id="shareModalTip" style="display:none">
+    手机：<b>长按图片</b>保存到相册 · 发朋友圈 / 钉群<br/>
+    PC：点击 <b>下载图片</b> 保存
   </div>
   <div class="share-modal-actions">
-    <button id="btnCloseShare">关闭</button>
-    <button class="primary" id="btnCopyShareText">复制话术</button>
+    <button id="btnCopyShareText">复制话术</button>
+    <a id="btnDownloadImg" class="primary" download="AIBTI海报.png">下载图片</a>
   </div>
 </div>
 
@@ -1497,47 +1510,263 @@ $('btnChallenge').onclick = ()=>{
 };
 
 /* 分享海报 */
-$('btnShareImage').onclick = ()=>{
+$('btnShareImage').onclick = async ()=>{
   const r = state.lastResult; if(!r) return;
-  renderShareImage(r);
   $('shareModal').classList.remove('hidden');
+  $('shareImg').style.display = 'none';
+  $('shareImgLoading').style.display = 'block';
+  $('shareModalTip').style.display = 'none';
+  $('btnDownloadImg').removeAttribute('href');
+  try {
+    const dataURL = await generatePoster(r);
+    $('shareImg').src = dataURL;
+    $('shareImg').style.display = 'block';
+    $('shareImgLoading').style.display = 'none';
+    $('shareModalTip').style.display = 'block';
+    $('btnDownloadImg').href = dataURL;
+    $('btnDownloadImg').download = `AIBTI-${r.p.name}.png`;
+  } catch(e){
+    $('shareImgLoading').textContent = '生成失败，请截图保存';
+  }
 };
 $('btnCloseShare').onclick = ()=> $('shareModal').classList.add('hidden');
 $('btnCopyShareText').onclick = ()=> $('btnShare').click();
 
-function renderShareImage(r){
+/* ===== Canvas 海报生成器 ===== */
+async function generatePoster(r) {
   const {p, scores, role, lv} = r;
-  // 雷达 SVG
-  const cx=100,cy=100,R=70;
-  const keys=['PROMPT','TOOLS','SCENE','TRUTH','FLOW','FAITH'];
-  const N=keys.length;
-  let grids='';
-  [0.25,0.5,0.75,1].forEach(rr=>{
-    const pts = keys.map((_,i)=>{
-      const a=Math.PI*2*i/N - Math.PI/2;
-      return (cx+Math.cos(a)*R*rr).toFixed(1)+','+(cy+Math.sin(a)*R*rr).toFixed(1);
-    }).join(' ');
-    grids += `<polygon points="${pts}" fill="none" stroke="rgba(255,255,255,${rr===1?.18:.08})" stroke-width="1"/>`;
-  });
-  let labels='', pts=[];
-  keys.forEach((k,i)=>{
-    const a=Math.PI*2*i/N - Math.PI/2;
-    const lx=cx+Math.cos(a)*(R+14), ly=cy+Math.sin(a)*(R+14)+3;
-    labels += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" fill="#8a8e9a" font-size="9" text-anchor="middle">${DIMS[k]}</text>`;
-    const v=scores[k]/100;
-    pts.push((cx+Math.cos(a)*R*v).toFixed(1)+','+(cy+Math.sin(a)*R*v).toFixed(1));
-  });
-  const radarSVG = `<svg viewBox="0 0 200 200" width="200" height="200">${grids}<polygon points="${pts.join(' ')}" fill="#d4a574" fill-opacity=".25" stroke="#d4a574" stroke-width="1.5"/>${labels}</svg>`;
+  const W = 750, H = 1280;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
 
-  $('shareRender').innerHTML = `
-    <div class="scr-brand">A · I · B · T · I</div>
-    <div class="scr-avatar">${avatarHTML(p)}</div>
-    <div class="scr-prefix">${role.name} · ${p.name}</div>
-    <div class="scr-name">${role.name}${p.name}</div>
-    <div class="scr-slogan">"${p.slogan}"</div>
-    <div class="scr-meta"><span class="scr-chip">${p.level} · ${lv.name} · 稀有度 ${p.rare}</span></div>
-    <div class="scr-radar">${radarSVG}</div>
-    <div class="scr-foot">扫码测你的 AI 段位 · <b>4.29 AI 分享会前必测</b></div>`;
+  // ── 背景 ──
+  const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+  bgGrad.addColorStop(0, '#1a0a2e');
+  bgGrad.addColorStop(0.5, '#0d0015');
+  bgGrad.addColorStop(1, '#080010');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // 背景光球
+  function radialGlow(x, y, r, color) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, color); g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  radialGlow(W * 0.85, H * 0.1, 350, 'rgba(168,85,247,.18)');
+  radialGlow(W * 0.1, H * 0.85, 300, 'rgba(6,182,212,.14)');
+  radialGlow(W * 0.5, H * 0.5, 400, 'rgba(236,72,153,.08)');
+
+  // ── 品牌标题 ──
+  ctx.save();
+  ctx.font = '600 26px ui-monospace,Menlo,monospace';
+  ctx.textAlign = 'center';
+  ctx.letterSpacing = '8px';
+  const brandGrad = ctx.createLinearGradient(W/2-120, 0, W/2+120, 0);
+  brandGrad.addColorStop(0, '#a855f7');
+  brandGrad.addColorStop(0.5, '#ec4899');
+  brandGrad.addColorStop(1, '#06b6d4');
+  ctx.fillStyle = brandGrad;
+  ctx.fillText('A · I · B · T · I', W/2, 72);
+  ctx.restore();
+
+  ctx.save();
+  ctx.font = '500 24px -apple-system,PingFang SC,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(180,176,200,0.6)';
+  ctx.fillText('你是哪种 AI 打工人', W/2, 108);
+  ctx.restore();
+
+  // ── 分割线 ──
+  ctx.save();
+  const lineGrad = ctx.createLinearGradient(80, 0, W-80, 0);
+  lineGrad.addColorStop(0, 'transparent');
+  lineGrad.addColorStop(0.3, 'rgba(168,85,247,.5)');
+  lineGrad.addColorStop(0.7, 'rgba(236,72,153,.5)');
+  lineGrad.addColorStop(1, 'transparent');
+  ctx.strokeStyle = lineGrad;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80, 128); ctx.lineTo(W-80, 128); ctx.stroke();
+  ctx.restore();
+
+  // ── 头像 ──
+  const avatarCX = W/2, avatarCY = 310, avatarR = 145;
+  // 发光圆环
+  [[avatarR+18, 'rgba(168,85,247,.5)'], [avatarR+10, 'rgba(236,72,153,.35)'], [avatarR+4, 'rgba(6,182,212,.2)']].forEach(([r2, c]) => {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(avatarCX, avatarCY, r2, 0, Math.PI*2);
+    ctx.strokeStyle = c; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.restore();
+  });
+  // 头像图片
+  ctx.save();
+  ctx.beginPath(); ctx.arc(avatarCX, avatarCY, avatarR, 0, Math.PI*2); ctx.clip();
+  try {
+    const img = await new Promise((res, rej) => {
+      const i = new Image(); i.crossOrigin = 'anonymous';
+      i.onload = () => res(i); i.onerror = rej;
+      i.src = `/image/${p.code}.png`;
+    });
+    ctx.drawImage(img, avatarCX-avatarR, avatarCY-avatarR, avatarR*2, avatarR*2);
+  } catch {
+    // SVG fallback：彩色渐变圆
+    const fb = ctx.createRadialGradient(avatarCX, avatarCY, 0, avatarCX, avatarCY, avatarR);
+    fb.addColorStop(0, lv.color + 'cc'); fb.addColorStop(1, '#1a0a2e');
+    ctx.fillStyle = fb; ctx.fillRect(avatarCX-avatarR, avatarCY-avatarR, avatarR*2, avatarR*2);
+    ctx.font = 'bold 80px ui-monospace'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff'; ctx.fillText(p.level, avatarCX, avatarCY+28);
+  }
+  ctx.restore();
+  // 等级徽章（右下角）
+  const badgeCX = avatarCX + avatarR - 20, badgeCY = avatarCY + avatarR - 20;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(badgeCX, badgeCY, 32, 0, Math.PI*2);
+  ctx.fillStyle = lv.color; ctx.fill();
+  ctx.strokeStyle = '#0d0015'; ctx.lineWidth = 4; ctx.stroke();
+  ctx.font = 'bold 20px ui-monospace'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff'; ctx.fillText(p.level, badgeCX, badgeCY+7);
+  ctx.restore();
+
+  // ── 人格名（渐变大字） ──
+  const fullName = `${role.name}${p.name}`;
+  ctx.save();
+  ctx.font = `900 ${fullName.length > 6 ? 68 : 80}px -apple-system,PingFang SC,sans-serif`;
+  ctx.textAlign = 'center';
+  const tw = ctx.measureText(fullName).width;
+  const nameGrad = ctx.createLinearGradient(W/2-tw/2, 0, W/2+tw/2, 0);
+  nameGrad.addColorStop(0, '#a855f7');
+  nameGrad.addColorStop(0.5, '#ec4899');
+  nameGrad.addColorStop(1, '#06b6d4');
+  ctx.fillStyle = nameGrad;
+  ctx.fillText(fullName, W/2, 530);
+  ctx.restore();
+
+  // ── Slogan ──
+  ctx.save();
+  ctx.font = 'italic 500 30px -apple-system,PingFang SC,sans-serif';
+  ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(180,176,200,.85)';
+  ctx.fillText(`"${p.slogan}"`, W/2, 580);
+  ctx.restore();
+
+  // ── 等级信息 chip ──
+  ctx.save();
+  const chipText = `${p.level} · ${lv.name} · 稀有度 ${p.rare}`;
+  ctx.font = '500 22px ui-monospace,Menlo,monospace';
+  ctx.textAlign = 'center';
+  const chipW = ctx.measureText(chipText).width + 48;
+  const chipX = W/2 - chipW/2, chipY = 608;
+  ctx.beginPath();
+  ctx.roundRect(chipX, chipY, chipW, 40, 20);
+  ctx.fillStyle = 'rgba(168,85,247,.15)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(168,85,247,.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = 'rgba(200,180,255,.9)';
+  ctx.fillText(chipText, W/2, chipY+26);
+  ctx.restore();
+
+  // ── 雷达图 ──
+  const radarCX = W/2, radarCY = 800, radarR = 120;
+  const dimKeys = ['PROMPT','TOOLS','SCENE','TRUTH','FLOW','FAITH'];
+  const N = dimKeys.length;
+  // 网格
+  [0.25, 0.5, 0.75, 1].forEach(ratio => {
+    ctx.save(); ctx.beginPath();
+    dimKeys.forEach((_, i) => {
+      const a = Math.PI*2*i/N - Math.PI/2;
+      const x = radarCX + Math.cos(a)*radarR*ratio, y = radarCY + Math.sin(a)*radarR*ratio;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.strokeStyle = `rgba(255,255,255,${ratio===1?.2:.06})`;
+    ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
+  });
+  // 轴线
+  dimKeys.forEach((_, i) => {
+    const a = Math.PI*2*i/N - Math.PI/2;
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(radarCX, radarCY);
+    ctx.lineTo(radarCX + Math.cos(a)*radarR, radarCY + Math.sin(a)*radarR);
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
+  });
+  // 数据多边形
+  ctx.save(); ctx.beginPath();
+  const radarPts = [];
+  dimKeys.forEach((k, i) => {
+    const a = Math.PI*2*i/N - Math.PI/2;
+    const v = (scores[k]||0)/100;
+    const x = radarCX + Math.cos(a)*radarR*v, y = radarCY + Math.sin(a)*radarR*v;
+    radarPts.push({x, y});
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  const radarFill = ctx.createLinearGradient(radarCX-radarR, radarCY-radarR, radarCX+radarR, radarCY+radarR);
+  radarFill.addColorStop(0, 'rgba(168,85,247,.45)'); radarFill.addColorStop(1, 'rgba(236,72,153,.35)');
+  ctx.fillStyle = radarFill; ctx.fill();
+  ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+  // 顶点圆点
+  radarPts.forEach(({x, y}) => {
+    ctx.save(); ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI*2);
+    ctx.fillStyle = '#f59e0b'; ctx.fill(); ctx.restore();
+  });
+  // 维度标签
+  ctx.save();
+  ctx.font = '400 20px -apple-system,PingFang SC,sans-serif';
+  ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(180,176,200,.8)';
+  dimKeys.forEach((k, i) => {
+    const a = Math.PI*2*i/N - Math.PI/2;
+    const lx = radarCX + Math.cos(a)*(radarR+34), ly = radarCY + Math.sin(a)*(radarR+34) + 7;
+    ctx.fillText(DIMS[k], lx, ly);
+  });
+  ctx.restore();
+
+  // ── 引用段 ──
+  const quoteY = 960;
+  ctx.save();
+  // 背景卡片
+  ctx.beginPath(); ctx.roundRect(40, quoteY-8, W-80, 140, 16);
+  ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.font = '400 26px -apple-system,PingFang SC,sans-serif';
+  ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(228,228,231,.85)';
+  // 截取 quote 前 2 行
+  const quote = p.quote.slice(0, 55) + (p.quote.length > 55 ? '...' : '');
+  let line = '', ly = quoteY + 34, lh = 40;
+  for (const ch of quote) {
+    const test = line + ch;
+    if (ctx.measureText(test).width > W-120 && line) {
+      ctx.fillText(line, 68, ly); ly += lh; line = ch;
+      if (ly > quoteY + 114) { ctx.fillText(line + '...', 68, ly); break; }
+    } else line = test;
+  }
+  if (ly <= quoteY + 114) ctx.fillText(line, 68, ly);
+  ctx.restore();
+
+  // ── 底部分割线 ──
+  ctx.save();
+  const bl = ctx.createLinearGradient(80, 0, W-80, 0);
+  bl.addColorStop(0, 'transparent'); bl.addColorStop(0.3, 'rgba(168,85,247,.4)');
+  bl.addColorStop(0.7, 'rgba(236,72,153,.4)'); bl.addColorStop(1, 'transparent');
+  ctx.strokeStyle = bl; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80, 1130); ctx.lineTo(W-80, 1130); ctx.stroke();
+  ctx.restore();
+
+  // ── 底部文字 ──
+  ctx.save();
+  ctx.font = '600 26px -apple-system,PingFang SC,sans-serif';
+  ctx.textAlign = 'center';
+  const footGrad = ctx.createLinearGradient(W/2-200, 0, W/2+200, 0);
+  footGrad.addColorStop(0, '#a855f7'); footGrad.addColorStop(0.5, '#ec4899'); footGrad.addColorStop(1, '#06b6d4');
+  ctx.fillStyle = footGrad;
+  ctx.fillText('4.29 AI 分享会 · 来测测你的段位', W/2, 1180);
+  ctx.restore();
+
+  ctx.save();
+  ctx.font = '400 22px -apple-system,PingFang SC,sans-serif';
+  ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(100,90,130,.8)';
+  ctx.fillText('AIBTI · 你是哪种 AI 打工人', W/2, 1230);
+  ctx.restore();
+
+  return canvas.toDataURL('image/png');
 }
 </script>
 </body>
