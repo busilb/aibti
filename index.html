@@ -1698,7 +1698,7 @@ async function generatePoster(r) {
     });
   }
   const avatarSrc = `https://cdn.jsdelivr.net/gh/busilb/aibti@main/image/${p.code}.png`;
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent('https://busilb.github.io/aibti/')}&size=180x180&color=e8d5ff&bgcolor=1a0a2e&qzone=1&margin=0`;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent('https://busilb.github.io/aibti/')}&size=180x180&color=1a0a2e&bgcolor=ffffff&qzone=2&margin=0`;
   const [avatarImg, qrImg] = await Promise.all([loadImg(avatarSrc), loadImg(qrSrc)]);
 
   ctx.save();
@@ -1870,20 +1870,19 @@ async function generatePoster(r) {
   ctx.restore();
 
   // ── 右侧：二维码 ──
-  const QR = { x: 570, y: FOOT_Y + 18, size: 100 };  // 90×90 逻辑像素
+  const QR = { x: 572, y: FOOT_Y + 16, size: 96 };
   if (qrImg) {
-    // 圆角背景
+    // 白色圆角卡片背景，与深色海报形成对比，提升扫码成功率
     ctx.save();
-    roundRect(QR.x - 6, QR.y - 6, QR.size + 12, QR.size + 12, 10);
-    ctx.fillStyle = '#1a0a2e'; ctx.fill();
-    ctx.strokeStyle = 'rgba(168,85,247,.4)'; ctx.lineWidth = 1.2; ctx.stroke();
+    roundRect(QR.x - 8, QR.y - 8, QR.size + 16, QR.size + 16, 12);
+    ctx.fillStyle = '#ffffff'; ctx.fill();
     ctx.drawImage(qrImg, QR.x, QR.y, QR.size, QR.size);
     ctx.restore();
     // "扫码测评" 标签
     ctx.save();
-    ctx.font = `500 14px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(168,150,210,.7)';
-    ctx.fillText('扫码测评', QR.x + QR.size / 2, QR.y + QR.size + 14);
+    ctx.font = `500 13px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(168,150,210,.75)';
+    ctx.fillText('扫码测评', QR.x + QR.size / 2, QR.y + QR.size + 16);
     ctx.restore();
   }
 
