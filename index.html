@@ -1421,35 +1421,25 @@ function renderResult(){
     </div>`).join('');
   $('adviceList').innerHTML = p.advice.map(a=>`<li>${a}</li>`).join('');
   $('ecNum').textContent = PERSONAS.length - 1;
-  $('shareQuote').textContent = `【AIBTI】我是 ${p.level} · ${role.name}${p.name}（全国仅 ${p.rare}）\n${p.slogan}\n\n来测测你的 AI 段位 →\n[此处贴链接]`;
   $('ctaTitle').textContent = `「${role.name}${p.name}」专场 AI 分享会`;
 
-  // 部门对线榜（如果填了部门）
-  if(state.dept){
-    // 用 dept 字符串生成稳定伪数据
-    const seed = state.dept.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
-    const total = 8 + (seed % 16); // 8-23 人
-    const lvNum = parseInt(p.level.slice(1));
-    const myRank = Math.max(1, Math.round(total * (5-lvNum)/5) - (seed%3));
-    const beatPct = Math.round((total - myRank) / total * 100);
-    $('compareCard').classList.remove('hidden');
-    $('ccBu').textContent = (state.bu || '阿里集团') + ' · ' + state.dept;
-    $('ccRankNum').textContent = '#' + myRank;
-    $('ccRankText').innerHTML = `你部门已 <b>${total}</b> 人测过<br/>你超过了 <b>${beatPct}%</b> 的同事`;
-    setTimeout(()=>{
-      $('ccBarFill').style.width = beatPct + '%';
-      $('ccBarText').textContent = `Beat ${beatPct}% / ${total} 人`;
-    }, 100);
-  } else {
-    $('compareCard').classList.add('hidden');
-  }
+  // 隐藏部门对线榜（BU/部门已移除）
+  if($('compareCard')) $('compareCard').classList.add('hidden');
 
-  // 挑战链接生成
-  const challengerName = state.dept || (state.bu || '神秘同学');
-  const url = `${location.origin}${location.pathname}?ch=${encodeURIComponent(challengerName)}&lv=${p.level}&p=${p.code}`;
-  $('coQuote').textContent = url;
-  state.challengeURL = url;
-  state.challengerName = challengerName;
+  // 正确生成分享链接：取当前页面干净 URL（去掉已有参数）
+  const cleanURL = location.origin + location.pathname.replace(/\/index\.html$/, '/');
+  const shareURL = cleanURL;  // 供他人直接测评
+  const challengeURL = `${cleanURL}?ch=${encodeURIComponent(role.name + p.name)}&lv=${p.level}&p=${p.code}`;
+
+  // 分享话术（含真实链接）
+  const shareText = `【AIBTI】我是 ${p.level} · ${role.name}${p.name}（全国仅 ${p.rare}）\n${p.slogan}\n\n来测测你的 AI 段位 →\n${shareURL}`;
+  $('shareQuote').textContent = shareText;
+
+  // 挑战链接
+  if($('coQuote')) $('coQuote').textContent = challengeURL;
+  state.challengeURL = challengeURL;
+  state.shareURL = shareURL;
+  state.challengerName = role.name + p.name;
 
   state.lastResult = {p,scores,role,lv};
 
@@ -1519,7 +1509,7 @@ $('btnCloseModal').onclick = ()=> $('modal').classList.add('hidden');
 $('modal').onclick = (e)=>{ if(e.target.id==='modal') $('modal').classList.add('hidden'); };
 $('btnShare').onclick = ()=>{
   const r = state.lastResult; if(!r) return;
-  const text = `【AIBTI】我是 ${r.p.level} · ${r.role.name}${r.p.name}（全国仅 ${r.p.rare}）\n${r.p.slogan} —— ${r.p.quote.split('。')[0]}。\n\n来测测你的 AI 段位 →\n${state.challengeURL || '[此处贴链接]'}`;
+  const text = `【AIBTI】我是 ${r.p.level} · ${r.role.name}${r.p.name}（全国仅 ${r.p.rare}）\n${r.p.slogan} —— ${r.p.quote.split('。')[0]}。\n\n来测测你的 AI 段位 →\n${state.shareURL || 'https://busilb.github.io/aibti/'}`;
   if(navigator.clipboard){
     navigator.clipboard.writeText(text).then(()=>{
       $('btnShare').textContent='已复制';
@@ -1808,7 +1798,7 @@ async function generatePoster(r) {
   ctx.fillText('4.29 AI 分享会 · 测测你的 AI 段位', CX, FOOT_Y + 34);
   ctx.font = `400 15px ${FONT}`;
   ctx.fillStyle = 'rgba(110,100,140,.75)';
-  ctx.fillText('AIBTI  ·  你是哪种 AI 打工人', CX, FOOT_Y + 64);
+  ctx.fillText('busilb.github.io/aibti', CX, FOOT_Y + 64);
   ctx.restore();
 
   return canvas.toDataURL('image/png');
