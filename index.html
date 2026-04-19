@@ -484,6 +484,32 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(.9)}}
 .anim{animation:fadeUp .18s ease both}
+
+/* G-01/G-02 Toast */
+#globalToast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);
+  background:rgba(20,10,40,.95);color:#f0f0f5;padding:10px 22px;border-radius:14px;
+  font-size:13px;font-weight:600;white-space:nowrap;opacity:0;
+  transition:opacity .22s;z-index:9999;pointer-events:none;
+  box-shadow:0 8px 28px rgba(0,0,0,.45);border:1px solid rgba(168,85,247,.35)}
+#globalToast.toast-show{opacity:1}
+
+/* G-04 百分位 badge */
+.r-percentile-wrap{text-align:center;margin-top:8px}
+.r-percentile{font-size:12px;color:rgba(168,85,247,.9);font-weight:600;letter-spacing:.03em;
+  padding:5px 14px;border-radius:99px;display:inline-block;
+  background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.2)}
+
+/* G-02 挑战卡片 */
+.challenge-card{background:linear-gradient(135deg,rgba(168,85,247,.07),rgba(236,72,153,.07));
+  border:1px solid rgba(168,85,247,.35)!important;text-align:center;padding:20px 18px!important}
+.chal-icon{font-size:26px;margin-bottom:6px;line-height:1}
+.chal-title{font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px}
+.chal-sub{font-size:12px;color:var(--text-sec);margin-bottom:16px;line-height:1.55}
+.chal-actions{display:flex;flex-direction:column;gap:8px}
+
+/* G-01 share actions 行 */
+.share-actions-row{display:flex;gap:8px;margin-top:8px}
+.share-actions-row .btn{font-size:13px}
 </style>
 </head>
 <body>
@@ -559,6 +585,9 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
       <div class="r-name" id="rName">运营老虾农</div>
       <div class="r-slogan" id="rSlogan">"又来养虾了？"</div>
       <div><div class="r-meta-row" id="rMeta"></div></div>
+      <div class="r-percentile-wrap">
+        <span class="r-percentile" id="rPercentile" style="display:none"></span>
+      </div>
     </div>
 
     <div class="card anim">
@@ -583,6 +612,17 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
       正在记录到统计系统...
     </div>
 
+    <!-- G-02 挑战卡片 -->
+    <div class="card challenge-card anim" id="challengeCard">
+      <div class="chal-icon">⚔️</div>
+      <div class="chal-title">向好友发起段位挑战</div>
+      <div class="chal-sub">把挑战书扔给同事 · 看看谁的 AI 段位更高</div>
+      <div class="chal-actions">
+        <button class="btn btn-primary" id="btnChallengeShare">🔥 一键发送挑战书</button>
+        <button class="btn btn-ghost" id="btnChallenge" style="font-size:12px">复制挑战链接</button>
+      </div>
+    </div>
+
     <div class="explore-card anim" id="exploreCard">
       <div class="ec-num" id="ecNum">14</div>
       <div class="ec-text">个人格<b>等你解锁</b><br/>看看其他 14 种人格</div>
@@ -591,10 +631,11 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 
     <div class="share-card anim">
       <div class="share-title">分享你的人格</div>
-      <div class="share-desc">3 种姿势：生成专属海报 / 复制对线话术 / 长按整页截图</div>
+      <div class="share-desc">分享到钉群 / 微信 · 或生成专属海报</div>
       <div class="share-quote" id="shareQuote"></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary" id="btnShareImage" style="flex:1">生成海报</button>
+      <button class="btn btn-primary" id="btnShareNative" style="width:100%;margin-top:12px">⚡ 一键分享</button>
+      <div class="share-actions-row">
+        <button class="btn btn-ghost" id="btnShareImage" style="flex:1">生成海报</button>
         <button class="btn btn-ghost" id="btnShare" style="flex:1">复制话术</button>
       </div>
     </div>
@@ -686,19 +727,8 @@ const BU_RANK = [
   { bu:'1688',     avg:2.7, count:524, og:1 }
 ];
 
-/* Ticker 滚动通知（伪数据） */
-const TICKER_LINES = [
-  '一位淘天 PD 测出 L5 老虾农',
-  '一位菜鸟运营测出 L4 赛博包工头',
-  '一位高德研发测出 L4 老法师',
-  '一位 AE 商务测出 L3 御三家投机者',
-  '一位集团公益运营测出 L2 复制怪',
-  '一位阿里云研发测出 L5 赛博炼丹师',
-  '一位淘天运营测出 L3 养虾户',
-  '一位 1688 运营测出 L2 仰卧起坐',
-  '一位菜鸟 PD 测出 L4 幻觉猎手',
-  '一位高德 BD 测出 L1 钉钉党'
-];
+/* Ticker 滚动通知（不使用假数据，仅展示后端真实数据） */
+const TICKER_LINES = [];
 
 /* BU 卷王榜数据 */
 const BUS = [
@@ -1042,6 +1072,42 @@ document.addEventListener('touchend', function(e){
   }
 }, {passive: false});
 
+/* ===== G-01/G-02 工具函数 ===== */
+function showToast(msg, ms=2200){
+  let t = document.getElementById('globalToast');
+  if(!t){ t=document.createElement('div'); t.id='globalToast'; document.body.appendChild(t); }
+  t.textContent = msg; t.className = 'toast-show';
+  clearTimeout(t._t); t._t = setTimeout(()=>t.className='', ms);
+}
+
+async function doShare(payload, fallbackText, btnEl, doneLabel='已复制'){
+  const orig = btnEl ? btnEl.textContent : '';
+  try {
+    if(navigator.share){
+      await navigator.share(payload);
+    } else {
+      await navigator.clipboard.writeText(fallbackText);
+      showToast('已复制，去粘贴发送 👆');
+      if(btnEl){ btnEl.textContent=doneLabel; setTimeout(()=>btnEl.textContent=orig,2200); }
+    }
+  } catch(e){
+    if(e.name==='AbortError') return;
+    try { await navigator.clipboard.writeText(fallbackText); } catch(e2){}
+    showToast('已复制，去粘贴发送');
+    if(btnEl){ btnEl.textContent=doneLabel; setTimeout(()=>btnEl.textContent=orig,2200); }
+  }
+}
+
+/* G-04 百分位：分段线性映射（基于 LEVELS range） */
+function computePercentile(levelScore){
+  const bands=[[0,28,0,12],[28,46,12,42],[46,64,42,76],[64,82,76,94],[82,100,94,99]];
+  for(const [lo,hi,plo,phi] of bands){
+    if(levelScore>=lo && levelScore<hi)
+      return Math.round(plo+(levelScore-lo)/(hi-lo)*(phi-plo));
+  }
+  return 99;
+}
+
 // 图片 CDN 策略：本地路径 > jsDelivr(镜像GitHub，内网更稳) > SVG兜底
 const IS_LOCAL = typeof location!=='undefined' &&
   (location.hostname==='localhost'||location.hostname==='127.0.0.1');
@@ -1162,7 +1228,12 @@ let state = {
   });
 
   API.get('/api/ticker', null).then(data => {
-    const lines = (data && data.lines && data.lines.length) ? data.lines : TICKER_LINES;
+    const lines = (data && data.lines && data.lines.length) ? data.lines : null;
+    if(!lines){
+      const tickerEl = document.querySelector('.ticker');
+      if(tickerEl) tickerEl.style.display = 'none';
+      return;
+    }
     let idx = 0;
     function showTicker(){
       const line = lines[idx % lines.length];
@@ -1462,6 +1533,20 @@ function renderResult(){
 
   state.lastResult = {p,scores,role,lv};
 
+  // G-04: 百分位排名
+  const pct = computePercentile(scores.LEVEL);
+  const pctEl = $('rPercentile');
+  if(pctEl){
+    pctEl.textContent = scores.LEVEL < 28
+      ? '你的 AI 段位还在起步，4.29 分享会为你准备 💪'
+      : `你比约 ${pct}% 的测评者 AI 使用更深${pct>=94?' 🔥':''}`;
+    pctEl.style.display = 'inline-block';
+  }
+
+  // G-01/G-02: 预存分享文案
+  state.shareNativeText = `【AIBTI · AI段位测评】\n我是 ${p.level}·${role.name}${p.name}（全国仅 ${p.rare}）\n"${p.slogan}"\n\n你的 AI 段位是什么？→\n${shareURL}`;
+  state.challengeText = `【AI段位挑战书 ⚔️】\n${state.challengerName} 测出了 ${p.level}·${p.name}（全国仅 ${p.rare}）\n\n你的 AI 段位比 TA 高吗？3分钟测完 →\n${challengeURL}\n\n（测完系统会告诉你比 TA 强在哪）`;
+
   // 自动提交（带 retry，最多 3 次）
   const payload = {
     role: state.role, level: p.level,
@@ -1543,28 +1628,46 @@ if(modalEl){
   }, {passive: false});
   modalEl.onclick = function(e){ if(!e.target.closest('.modal')) modalEl.classList.add('hidden'); };
 }
-on('btnShare', ()=>{
+
+/* G-01: 一键分享（原生 share） */
+on('btnShareNative', async ()=>{
   const r = state.lastResult; if(!r) return;
-  const text = `【AIBTI】我是 ${r.p.level} · ${r.role.name}${r.p.name}（全国仅 ${r.p.rare}）\n${r.p.slogan} —— ${r.p.quote.split('。')[0]}。\n\n来测测你的 AI 段位 →\n${state.shareURL || 'https://busilb.github.io/aibti/'}`;
-  if(navigator.clipboard){
-    navigator.clipboard.writeText(text).then(()=>{
-      $('btnShare').textContent='已复制';
-      setTimeout(()=>$('btnShare').textContent='复制话术',2000);
-    });
-  } else { alert(text); }
+  await doShare(
+    {title:'AIBTI · 你是哪种AI打工人', text:state.shareNativeText, url:state.shareURL},
+    state.shareNativeText + '\n' + state.shareURL,
+    $('btnShareNative'), '已复制 ✓'
+  );
 });
 
-/* 复制挑战链接 */
-on('btnChallenge', ()=>{
+/* G-02: 一键发送挑战书（原生 share） */
+on('btnChallengeShare', async ()=>{
+  const r = state.lastResult; if(!r) return;
+  await doShare(
+    {title:'AIBTI AI段位挑战', text:state.challengeText, url:state.challengeURL},
+    state.challengeText,
+    $('btnChallengeShare'), '已复制 · 去发送'
+  );
+});
+
+/* G-02: 复制挑战链接（强刺激话术） */
+on('btnChallenge', async ()=>{
   if(!state.challengeURL) return;
-  const r = state.lastResult;
-  const text = `【AIBTI · 挑战】${state.challengerName} 邀你 PK（我是 ${r.p.level} · ${r.role.name}${r.p.name}）\n\n点链接看看你的 AI 段位有没有我高 →\n${state.challengeURL}`;
-  if(navigator.clipboard){
-    navigator.clipboard.writeText(text).then(()=>{
-      $('btnChallenge').textContent='已复制 · 去钉群战书';
-      setTimeout(()=>$('btnChallenge').textContent='复制挑战链接',2200);
-    });
-  } else { alert(text); }
+  try {
+    await navigator.clipboard.writeText(state.challengeText);
+    $('btnChallenge').textContent = '已复制 · 去钉群战书';
+    setTimeout(()=>$('btnChallenge').textContent='复制挑战链接', 2200);
+  } catch(e){ showToast(state.challengeText); }
+});
+
+/* G-01 fallback: 复制话术 */
+on('btnShare', async ()=>{
+  const r = state.lastResult; if(!r) return;
+  const text = `【AIBTI】我是 ${r.p.level}·${r.role.name}${r.p.name}（全国仅 ${r.p.rare}）\n${r.p.slogan} —— ${r.p.quote.split('。')[0]}。\n\n来测测你的 AI 段位 →\n${state.shareURL || 'https://busilb.github.io/aibti/'}`;
+  try {
+    await navigator.clipboard.writeText(text);
+    $('btnShare').textContent = '已复制';
+    setTimeout(()=>$('btnShare').textContent='复制话术', 2000);
+  } catch(e){ showToast(text); }
 });
 
 /* 分享海报 */
