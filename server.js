@@ -838,7 +838,12 @@ const server = http.createServer(async (req, res) => {
       });
       return res.end(JSON.stringify(history, null, 2));
     }
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Disposition': 'inline',       // 覆盖 FC 默认的 attachment
+      'X-Content-Type-Options': 'nosniff',   // 防止浏览器 MIME 嗅探
+      'Cache-Control': 'no-cache'
+    });
     return res.end(adminSPA(u.searchParams.get('password')));
   }
 
@@ -858,7 +863,11 @@ const server = http.createServer(async (req, res) => {
   if (filePath && fs.existsSync(filePath)) {
     const ext = path.extname(filePath);
     const mime = staticMap[ext] || 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': mime });
+    res.writeHead(200, {
+      'Content-Type': mime,
+      'Content-Disposition': 'inline',
+      'X-Content-Type-Options': 'nosniff'
+    });
     return fs.createReadStream(filePath).pipe(res);
   }
 
