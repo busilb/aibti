@@ -54,23 +54,28 @@ function lookupCity(ip) {
 function ghRequest(path, method = 'GET', payload = null) {
   const https = require('https');
   return new Promise(resolve => {
-    const req = https.request({
-      hostname: 'api.github.com',
-      path,
-      method,
-      headers: {
-        'Authorization': `token ${GH_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github+json',
-        'User-Agent': 'aibti-server'
-      }
-    }, res => {
+    const body = payload ? (typeof payload === 'string' ? payload : JSON.stringify(payload)) : null;
+    const headers = {
+      'Authorization': `token ${GH_TOKEN}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/vnd.github+json',
+      'User-Agent': 'aibti-server'
+    };
+    if (body) headers['Content-Length'] = Buffer.byteLength(body, 'utf8');
+    const req = https.request({ hostname: 'api.github.com', path, method, headers }, res => {
       let data = '';
       res.on('data', c => data += c);
-      res.on('end', () => { try { resolve(JSON.parse(data)); } catch { resolve(null); } });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          // 记录 GitHub API 错误日志
+          if (parsed.message) console.log(`[GH API ${method}] ${path} → ${parsed.message}`);
+          resolve(parsed);
+        } catch { resolve(null); }
+      });
     });
-    req.on('error', () => resolve(null));
-    if (payload) req.write(typeof payload === 'string' ? payload : JSON.stringify(payload));
+    req.on('error', e => { console.log(`[GH API Error] ${e.message}`); resolve(null); });
+    if (body) req.write(body);
     req.end();
   });
 }
