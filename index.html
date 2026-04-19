@@ -31,7 +31,8 @@
   --p:#a855f7; --pk:#ec4899; --cy:#06b6d4;
 }
 
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;
+  touch-action:manipulation;user-select:none;-webkit-user-select:none}
 html,body{height:100%;background:var(--bg);color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif;
   -webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -140,7 +141,7 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 
 /* ── Top3 卡片 ── */
 .hot-scroll{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;
-  padding:4px 20px 14px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+  padding:4px 20px 14px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;touch-action:pan-x}
 .hot-scroll::-webkit-scrollbar{display:none}
 .hot-card{flex:0 0 190px;background:rgba(255,255,255,.06);border:1px solid var(--border);
   border-radius:18px;padding:16px 12px;scroll-snap-align:start;cursor:pointer;
@@ -180,7 +181,7 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 .input-group .hint{font-size:11px;color:var(--text-dim);margin-top:5px;line-height:1.5}
 
 /* ── BU 相关（保留不删，不显示也无妨） ── */
-.bu-scroll{display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.bu-scroll{display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x}
 .bu-scroll::-webkit-scrollbar{display:none}
 .bu-card{flex:0 0 200px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:14px}
 .bu-card .bu-rank{color:var(--p);font-size:11px;font-weight:700;margin-bottom:6px}
@@ -385,7 +386,7 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 /* ── 分享 Modal ── */
 .share-modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.95);backdrop-filter:blur(20px);
   z-index:200;display:flex;align-items:flex-start;justify-content:center;
-  padding:0;flex-direction:column;overflow-y:auto}
+  padding:0;flex-direction:column;overflow-y:auto;touch-action:pan-y}
 .share-modal-mask.hidden{display:none}
 .share-modal-header{display:flex;justify-content:space-between;align-items:center;
   padding:16px 20px;width:100%;flex-shrink:0}
@@ -469,7 +470,7 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 .modal-mask.hidden{display:none}
 .modal{background:linear-gradient(180deg,#1a0a2e,#0d0015);width:100%;max-width:480px;
   max-height:92vh;border-radius:24px 24px 0 0;overflow-y:auto;animation:slideUp .3s ease;
-  border-top:1px solid rgba(168,85,247,.3)}
+  border-top:1px solid rgba(168,85,247,.3);touch-action:pan-y}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
 .modal-close{position:sticky;top:0;background:linear-gradient(180deg,#1a0a2e 50%,transparent);
   text-align:right;padding:14px 22px 6px;z-index:1}
@@ -1032,6 +1033,13 @@ const $ = id => document.getElementById(id);
 const findP = code => PERSONAS.find(p=>p.code===code);
 const findLevel = code => LEVELS.find(l=>l.code===code);
 
+/* iOS 双击缩放防护：对交互元素阻止 touchend 默认行为 */
+document.addEventListener('touchend', function(e){
+  if(e.target.closest('button,.btn,.opt,.hot-card,.gal-card,.lv,a[role="button"]')){
+    e.preventDefault();
+  }
+}, {passive: false});
+
 // 图片 CDN 策略：本地路径 > jsDelivr(镜像GitHub，内网更稳) > SVG兜底
 const IS_LOCAL = typeof location!=='undefined' &&
   (location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.hostname==='192.168.31.73');
@@ -1497,17 +1505,20 @@ function go(id){
   window.scrollTo(0,0);
 }
 
-$('btnStart').onclick = ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('quiz'); renderQuestion(); };
-$('btnStartFromGal').onclick = ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('quiz'); renderQuestion(); };
-$('btnRetry').onclick = ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('welcome'); };
-$('btnGallery2').onclick = ()=> go('gallery');
-$('btnBack').onclick = ()=> go(state.lastResult ? 'result' : 'welcome');
-$('lnkGallery').onclick = (e)=>{ e.preventDefault(); go('gallery'); };
-$('lnkGallery2').onclick = ()=> go('gallery');
-$('exploreCard').onclick = ()=> go('gallery');
-$('btnCloseModal').onclick = ()=> $('modal').classList.add('hidden');
-$('modal').onclick = (e)=>{ if(e.target.id==='modal') $('modal').classList.add('hidden'); };
-$('btnShare').onclick = ()=>{
+// 防御性事件绑定：元素不存在时静默跳过，避免 TypeError 中断脚本
+function on(id, fn) { const el = $(id); if (el) el.onclick = fn; }
+
+on('btnStart', ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('quiz'); renderQuestion(); });
+on('btnStartFromGal', ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('quiz'); renderQuestion(); });
+on('btnRetry', ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('welcome'); });
+on('btnGallery2', ()=> go('gallery'));
+on('btnBack', ()=> go(state.lastResult ? 'result' : 'welcome'));
+on('lnkGallery', (e)=>{ e.preventDefault(); go('gallery'); });
+on('lnkGallery2', ()=> go('gallery'));
+on('exploreCard', ()=> go('gallery'));
+on('btnCloseModal', ()=> $('modal').classList.add('hidden'));
+on('modal', (e)=>{ if(e.target.id==='modal') $('modal').classList.add('hidden'); });
+on('btnShare', ()=>{
   const r = state.lastResult; if(!r) return;
   const text = `【AIBTI】我是 ${r.p.level} · ${r.role.name}${r.p.name}（全国仅 ${r.p.rare}）\n${r.p.slogan} —— ${r.p.quote.split('。')[0]}。\n\n来测测你的 AI 段位 →\n${state.shareURL || 'https://busilb.github.io/aibti/'}`;
   if(navigator.clipboard){
@@ -1516,10 +1527,10 @@ $('btnShare').onclick = ()=>{
       setTimeout(()=>$('btnShare').textContent='复制话术',2000);
     });
   } else { alert(text); }
-};
+});
 
 /* 复制挑战链接 */
-if($('btnChallenge')) $('btnChallenge').onclick = ()=>{
+on('btnChallenge', ()=>{
   if(!state.challengeURL) return;
   const r = state.lastResult;
   const text = `【AIBTI · 挑战】${state.challengerName} 邀你 PK（我是 ${r.p.level} · ${r.role.name}${r.p.name}）\n\n点链接看看你的 AI 段位有没有我高 →\n${state.challengeURL}`;
@@ -1529,10 +1540,10 @@ if($('btnChallenge')) $('btnChallenge').onclick = ()=>{
       setTimeout(()=>$('btnChallenge').textContent='复制挑战链接',2200);
     });
   } else { alert(text); }
-};
+});
 
 /* 分享海报 */
-$('btnShareImage').onclick = async ()=>{
+on('btnShareImage', async ()=>{
   const r = state.lastResult; if(!r) return;
   $('shareModal').classList.remove('hidden');
   $('shareImg').style.display = 'none';
@@ -1546,15 +1557,14 @@ $('btnShareImage').onclick = async ()=>{
     $('shareImg').style.display = 'block';
     $('shareImgLoading').style.display = 'none';
     $('shareModalTip').style.display = 'block';
-    $('btnDownloadImg').href = dataURL;
-    $('btnDownloadImg').download = `AIBTI-${r.p.name}.png`;
+    if($('btnDownloadImg')){ $('btnDownloadImg').href = dataURL; $('btnDownloadImg').download = `AIBTI-${r.p.name}.png`; }
   } catch(e){
     console.error('generatePoster error:', e);
     $('shareImgLoading').textContent = '生成失败: ' + e.message;
   }
-};
-$('btnCloseShare').onclick = ()=> $('shareModal').classList.add('hidden');
-$('btnCopyShareText').onclick = ()=> $('btnShare').click();
+});
+on('btnCloseShare', ()=> $('shareModal').classList.add('hidden'));
+on('btnCopyShareText', ()=> { const b = $('btnShare'); if(b) b.click(); });
 
 /* ===== Canvas 海报生成器 ===== */
 async function generatePoster(r) {
@@ -1564,6 +1574,7 @@ async function generatePoster(r) {
   const canvas = document.createElement('canvas');
   canvas.width = W * DPR; canvas.height = H * DPR;
   const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 不支持，请升级浏览器');
   ctx.scale(DPR, DPR); // 2x 清晰度，后续所有坐标用逻辑像素
 
   const CX = W / 2;
