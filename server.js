@@ -50,29 +50,14 @@ function lookupCity(ip) {
 }
 
 /* ── GitHub Issues 创建 ── */
-async function createGHIssue(record) {
-  if (!GH_TOKEN) return null;
+/* ── GitHub Issues 通用请求 ── */
+function ghRequest(path, method = 'GET', payload = null) {
   const https = require('https');
-  const dimStr = Object.entries(DIMS_MAP)
-    .map(([k, n]) => `${n}:${record.scores[k] || 0}`).join(' / ');
-  const body = [
-    `**等级**：${record.level}`,
-    `**人格**：${record.personaName}（${record.personaCode}）`,
-    `**职能**：${record.role}`,
-    `**六维**：${dimStr}`,
-    `**时间**：${new Date(record.ts).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`,
-    '', '_匿名提交_'
-  ].join('\n');
-  const payload = JSON.stringify({
-    title: `[AIBTI] ${record.role} · ${record.level} · ${record.personaName}`,
-    body,
-    labels: [record.level, record.role, 'stats'].filter(Boolean)
-  });
   return new Promise(resolve => {
     const req = https.request({
       hostname: 'api.github.com',
-      path: `/repos/${GH_REPO}/issues`,
-      method: 'POST',
+      path,
+      method,
       headers: {
         'Authorization': `token ${GH_TOKEN}`,
         'Content-Type': 'application/json',
@@ -82,11 +67,75 @@ async function createGHIssue(record) {
     }, res => {
       let data = '';
       res.on('data', c => data += c);
-      res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { resolve(null); } });
+      res.on('end', () => { try { resolve(JSON.parse(data)); } catch { resolve(null); } });
     });
     req.on('error', () => resolve(null));
-    req.write(payload);
+    if (payload) req.write(typeof payload === 'string' ? payload : JSON.stringify(payload));
     req.end();
+  });
+}
+
+/* ── 从 GitHub Issues 拉取所有历史记录（最多 n 条） ── */
+async function fetchIssueHistory(n = 100) {
+  if (!GH_TOKEN) return [];
+  const issues = await ghRequest(
+    `/repos/${GH_REPO}/issues?labels=stats&state=open&per_page=${n}&sort=created&direction=desc`
+  );
+  if (!Array.isArray(issues)) return [];
+  return issues.map(issue => {
+    const body = issue.body || '';
+    const get = key => { const m = body.match(new RegExp(`\\*\\*${key}\\*\\*[：:]([^\n]+)`)); return m ? m[1].trim() : ''; };
+    const labels = (issue.labels || []).map(l => l.name);
+    const lv   = labels.find(l => /^L[1-5]$/.test(l)) || '';
+    const role = labels.find(l => ['OPS','PD','DEV','BD'].includes(l)) || get('职能');
+    const cityStr = get('城市');
+    const [city, region] = cityStr.split('·').map(s => s?.trim() || '');
+    const personaRaw = get('人格');
+    const personaName = personaRaw.replace(/（.*）/, '').trim();
+    const personaCode = (personaRaw.match(/（(.+?)）/) || [])[1] || '';
+    const ts = issue.created_at || '';
+    // 北京时间格式化
+    const tsLocal = ts ? new Date(ts).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }) : '';
+    return { ts: tsLocal, level: lv, personaName, personaCode, role, city: city||'', region: region||'' };
+  });
+}
+
+/* ── 从 GitHub Issues 聚合统计（跨重启持久） ── */
+async function calcStatsFromGH() {
+  const records = await fetchIssueHistory(100);
+  const total = records.length;
+  if (total === 0) return { total: 0, ogPct: '0%', byLevel: {}, byPersona: {}, byRole: {}, byCity: {} };
+  const byLevel = {}, byPersona = {}, byRole = {}, byCity = {};
+  let ogCount = 0;
+  records.forEach(r => {
+    if (r.level)       byLevel[r.level]     = (byLevel[r.level] || 0) + 1;
+    if (r.personaCode) byPersona[r.personaCode] = (byPersona[r.personaCode] || 0) + 1;
+    if (r.role)        byRole[r.role]        = (byRole[r.role] || 0) + 1;
+    const city = r.city || '未知';
+    if (city !== '未知' && city !== '') byCity[city] = (byCity[city] || 0) + 1;
+    if (r.personaCode === 'OG-FARMER') ogCount++;
+  });
+  return { total, ogPct: (ogCount/total*100).toFixed(1)+'%', byLevel, byPersona, byRole, byCity };
+}
+
+async function createGHIssue(record) {
+  if (!GH_TOKEN) return null;
+  const dimStr = Object.entries(DIMS_MAP)
+    .map(([k, n]) => `${n}:${record.scores[k] || 0}`).join(' / ');
+  const cityStr = record.city ? `${record.city}·${record.region||''}` : '未知';
+  const body = [
+    `**等级**：${record.level}`,
+    `**人格**：${record.personaName}（${record.personaCode}）`,
+    `**职能**：${record.role}`,
+    `**城市**：${cityStr}`,
+    `**六维**：${dimStr}`,
+    `**时间**：${new Date(record.ts).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`,
+    '', '_匿名提交_'
+  ].join('\n');
+  return ghRequest(`/repos/${GH_REPO}/issues`, 'POST', {
+    title: `[AIBTI] ${record.role} · ${record.level} · ${record.personaName}`,
+    body,
+    labels: [record.level, record.role, 'stats'].filter(Boolean)
   });
 }
 
@@ -204,12 +253,13 @@ function adminHTML(stats, results) {
   const cityData   = JSON.stringify(cityEntries.map(([,v]) => v));
   const hasCityData = cityEntries.length > 0;
 
-  // 最近 20 条记录表格
-  const recentRows = results.slice(-20).reverse()
+  // 全量历史记录（最多 100 条，来自 GitHub Issues）
+  const recentRows = results
     .map(r => {
-      const ts = r.ts ? new Date(r.ts).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}).replace(/\//g,'-') : '';
-      const loc = r.city ? `${r.city}` : '-';
-      return `<tr><td>${ts}</td><td>${r.role||'-'}</td><td>${r.level||'-'}</td><td>${r.personaName||'-'}</td><td>${loc}</td></tr>`;
+      const ts = r.ts || '-';
+      const loc = r.city ? `${r.city}${r.region ? ' · '+r.region : ''}` : '-';
+      const lvBadge = r.level ? `<span class="badge ${r.level}">${r.level}</span>` : '-';
+      return `<tr><td>${ts}</td><td>${r.role||'-'}</td><td>${lvBadge}</td><td>${r.personaName||'-'}</td><td>${loc}</td></tr>`;
     }).join('');
 
   return `<!DOCTYPE html>
@@ -280,10 +330,10 @@ ${hasCityData ? `
 </div>` : ''}
 
 <div class="sec">
-  <h2>最近 20 条记录</h2>
+  <h2>提交人明细（全量历史，最多 100 条 · 来源 GitHub Issues）</h2>
   <table>
-    <tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th><th>城市</th></tr>
-    ${recentRows}
+    <tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th><th>城市 · 省份</th></tr>
+    ${recentRows || '<tr><td colspan="5" style="text-align:center;color:#52525b;padding:20px">暂无数据</td></tr>'}
   </table>
 </div>
 
@@ -430,14 +480,19 @@ const server = http.createServer(async (req, res) => {
     return json(res, { ok: true, total: stats.total });
   }
 
-  // GET /api/stats - 聚合统计（供首页 proof 用）
+  // GET /api/stats - 聚合统计（优先从 GitHub Issues，跨重启持久）
   if (req.method === 'GET' && path_ === '/api/stats') {
+    const ghStats = await calcStatsFromGH();
+    if (ghStats.total > 0) return json(res, ghStats);
+    // GH 无数据时降级本地
     const data = loadData();
     return json(res, calcStats(data.results));
   }
 
-  // GET /api/ticker - 最近动态（供首页滚动用）
+  // GET /api/ticker - 最近动态
   if (req.method === 'GET' && path_ === '/api/ticker') {
+    const history = await fetchIssueHistory(12);
+    if (history.length > 0) return json(res, { lines: history.map(r => ({ ...r, bu:'' })) });
     const data = loadData();
     return json(res, { lines: getTickerLines(data.results, 12) });
   }
@@ -452,10 +507,10 @@ const server = http.createServer(async (req, res) => {
     return json(res, { dept: deptName, total: deptResults.length, byLevel });
   }
 
-  // GET /admin - 管理员看板（需要密码）
+  // GET /admin - 管理员看板（需要密码，从 GitHub Issues 读全量历史）
   if (req.method === 'GET' && path_ === '/admin') {
     if (!adminCheck(req, res)) return;
-    const data = loadData();
+    const [stats, history] = await Promise.all([calcStatsFromGH(), fetchIssueHistory(100)]);
     // 导出 JSON
     if (u.searchParams.get('export')) {
       res.writeHead(200, {
@@ -463,11 +518,10 @@ const server = http.createServer(async (req, res) => {
         'Content-Disposition': 'attachment; filename="aibti-export.json"',
         'Access-Control-Allow-Origin': '*'
       });
-      return res.end(JSON.stringify(data.results, null, 2));
+      return res.end(JSON.stringify(history, null, 2));
     }
-    const stats = calcStats(data.results);
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    return res.end(adminHTML(stats, data.results));
+    return res.end(adminHTML(stats, history));
   }
 
   // 静态文件服务（前端 index.html + image/ 目录）
