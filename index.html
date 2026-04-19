@@ -575,14 +575,9 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
       <ul class="advice-list" id="adviceList"></ul>
     </div>
 
-    <!-- 匿名统计卡 -->
-    <div class="stats-card anim" id="statsCard">
-      <div class="stats-icon">📊</div>
-      <div class="stats-body">
-        <div class="stats-title">参与匿名统计</div>
-        <div class="stats-desc">仅记录职能 · 段位 · 人格，不收集任何个人信息<br/>帮助了解 BU 整体 AI 能力分布</div>
-      </div>
-      <button class="stats-btn" id="btnStats">一键提交</button>
+    <!-- 自动提交状态提示（轻量，不占空间） -->
+    <div id="autoSubmitStatus" style="text-align:center;font-size:11px;color:var(--text-dim);margin:-4px 0 8px;letter-spacing:.05em">
+      正在记录到统计系统...
     </div>
 
     <div class="explore-card anim" id="exploreCard">
@@ -1458,20 +1453,28 @@ function renderResult(){
 
   state.lastResult = {p,scores,role,lv};
 
-  // 提交结果到后端（异步，不阻塞 UI）
-  API.post('/api/submit', {
-    bu:     state.bu || '未填写',
-    dept:   state.dept || '未填写',
-    role:   state.role,
-    level:  p.level,
-    personaCode: p.code,
-    personaName: p.name,
-    scores: scores,
-    source: 'web'
-  }).then(res => {
-    // 提交成功后更新 proof 计数
-    if(res && res.total) $('proofN').textContent = res.total.toLocaleString();
-  });
+  // 自动提交（带 retry，最多 3 次）
+  const payload = {
+    role: state.role, level: p.level,
+    personaCode: p.code, personaName: p.name,
+    scores: scores, source: 'web'
+  };
+  (async () => {
+    const statusEl = $('autoSubmitStatus');
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await API.post('/api/submit', payload);
+        if (res && res.ok) {
+          if (statusEl) statusEl.textContent = '已匿名记录 ✓';
+          if (res.total) $('proofN').textContent = res.total.toLocaleString();
+          return;
+        }
+      } catch(e) {}
+      if (attempt < 3) await new Promise(r => setTimeout(r, 2000 * attempt));
+    }
+    // 3 次都失败，静默隐藏提示
+    if (statusEl) statusEl.style.display = 'none';
+  })();
 
   window.scrollTo(0,0);
 }
@@ -1503,21 +1506,6 @@ function go(id){
   $(id).classList.remove('hidden');
   window.scrollTo(0,0);
 }
-/* 统计按钮 */
-$('btnStats').onclick = async ()=>{
-  const r = state.lastResult; if(!r) return;
-  const btn = $('btnStats');
-  btn.textContent = '提交中...'; btn.disabled = true;
-  const res = await submitGithubStats(r);
-  if(res.ok){
-    btn.textContent = '已提交 ✓';
-    btn.classList.add('done');
-    $('statsCard').querySelector('.stats-desc').textContent = '感谢参与！数据已匿名记录到统计系统';
-  } else {
-    btn.textContent = '一键提交';
-    btn.disabled = false;
-  }
-};
 
 $('btnStart').onclick = ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('quiz'); renderQuestion(); };
 $('btnStartFromGal').onclick = ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('quiz'); renderQuestion(); };
