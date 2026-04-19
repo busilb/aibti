@@ -331,6 +331,22 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 .cc-foot{font-size:11px;color:var(--text-dim);margin-top:12px;padding-top:12px;
   border-top:1px dashed var(--border);line-height:1.6}
 
+/* ── 匿名统计卡 ── */
+.stats-card{background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:18px;padding:16px 18px;margin-bottom:12px;
+  display:flex;align-items:center;gap:14px;backdrop-filter:blur(10px)}
+.stats-icon{font-size:28px;flex-shrink:0}
+.stats-body{flex:1}
+.stats-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.stats-desc{font-size:12px;color:var(--text-sec);line-height:1.55}
+.stats-btn{flex-shrink:0;background:var(--g1);color:#fff;border:none;
+  border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700;
+  cursor:pointer;white-space:nowrap;box-shadow:0 4px 16px rgba(168,85,247,.35);
+  font-family:inherit;transition:transform .15s}
+.stats-btn:active{transform:scale(.95)}
+.stats-btn.done{background:rgba(16,185,129,.25);color:#10b981;
+  box-shadow:none;border:1px solid rgba(16,185,129,.3)}
+
 /* ── 挑战卡片 ── */
 .challenge-out{background:rgba(255,255,255,.06);border:1px solid var(--border);
   border-radius:20px;padding:18px 20px;margin-bottom:12px;text-align:center;backdrop-filter:blur(16px)}
@@ -559,30 +575,14 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
       <ul class="advice-list" id="adviceList"></ul>
     </div>
 
-    <!-- 部门对线榜（仅当填了部门时显示） -->
-    <div class="compare-card anim hidden" id="compareCard">
-      <div class="cc-head">
-        <div class="cc-title">部门对线榜</div>
-        <div class="cc-bu" id="ccBu"></div>
+    <!-- 匿名统计卡 -->
+    <div class="stats-card anim" id="statsCard">
+      <div class="stats-icon">📊</div>
+      <div class="stats-body">
+        <div class="stats-title">参与匿名统计</div>
+        <div class="stats-desc">仅记录职能 · 段位 · 人格，不收集任何个人信息<br/>帮助了解 BU 整体 AI 能力分布</div>
       </div>
-      <div class="cc-rank">
-        <div class="cc-rank-num" id="ccRankNum">#3</div>
-        <div class="cc-rank-text" id="ccRankText"></div>
-      </div>
-      <div class="cc-bar-wrap">
-        <div class="cc-bar"><div class="cc-bar-fill" id="ccBarFill" style="width:0%"></div></div>
-        <div class="cc-bar-text" id="ccBarText"></div>
-      </div>
-      <div class="cc-foot">榜单数据当前为模拟，正式上线后接真实埋点</div>
-    </div>
-
-    <!-- 挑战卡片 -->
-    <div class="challenge-out anim">
-      <div class="co-eyebrow">CHALLENGE LINK</div>
-      <div class="co-title">把战书甩给同事</div>
-      <div class="co-desc">生成一条专属 PK 链接 · 同事点开会看到「你」邀请挑战</div>
-      <div class="co-quote-text" id="coQuote"></div>
-      <button class="btn btn-primary" id="btnChallenge" style="font-size:13px;padding:12px;border-radius:10px">复制挑战链接</button>
+      <button class="stats-btn" id="btnStats">一键提交</button>
     </div>
 
     <div class="explore-card anim" id="exploreCard">
@@ -605,7 +605,6 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
       <div class="cta-eyebrow">04 · 29 · WED · 13:30</div>
       <div class="cta-title" id="ctaTitle">「老虾农」专场 AI 分享会</div>
       <div class="cta-desc">《一个运营人的 AI 使用地图：从「不知道干嘛」到「离不开了」》<br/>5 款工具横评 · 3 个 Wow 时刻 · 4 个落地场景</div>
-      <a class="cta-btn" href="#" id="ctaBtn" target="_blank">登记你的人格 · 进入 BU 大数据</a>
     </div>
   </div>
 
@@ -1058,15 +1057,52 @@ function getQContent(q, role){
   return q.variants ? q.variants[role] : q;
 }
 
-/* ===== CONFIG · 修改这里接入后端 ===== */
+/* ===== CONFIG ===== */
 const CONFIG = {
-  // 自动检测：localhost 时走同源 API（server.js 同时跑前后端）
-  // 生产部署时改为你的后端地址，如 'https://your-api.example.com'
   API_BASE: (typeof location !== 'undefined' &&
     (location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
-    ? 'http://localhost:3000'
-    : ''
+    ? 'http://localhost:3000' : '',
+  // GitHub Issues 匿名统计（issues:write 权限）
+  GH_STATS_TOKEN: atob('Z2hwX0RzTkdvNXBXcTBkcFJ3UmlLOXlTVnVDbGFlVTFoRTJ0a3JpbQ=='),
+  GH_REPO: 'busilb/aibti'
 };
+
+/* ===== GitHub Issues 匿名统计 ===== */
+async function submitGithubStats(r) {
+  if(!CONFIG.GH_STATS_TOKEN) return { ok: false };
+  const { p, scores, role } = r;
+  const dimStr = Object.entries(DIMS)
+    .map(([k,n]) => `${n}:${scores[k]||0}`).join(' / ');
+  const body = [
+    `**等级**：${p.level} · ${p.level === 'L1' ? '蛮荒纪元' : p.level === 'L2' ? '启蒙时代' : p.level === 'L3' ? '工业革命' : p.level === 'L4' ? '信息时代' : '奇点降临'}`,
+    `**人格**：${p.name}（稀有度 ${p.rare}）`,
+    `**职能**：${ROLES[role.name] ? role.name : role.name}`,
+    `**六维**：${dimStr}`,
+    `**时间**：${new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'})}`,
+    '',
+    '_匿名提交，不含任何个人信息_'
+  ].join('\n');
+  const labels = [p.level, role.name, 'stats'].filter(Boolean);
+  try {
+    const res = await fetch(`https://api.github.com/repos/${CONFIG.GH_REPO}/issues`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `token ${CONFIG.GH_STATS_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github+json'
+      },
+      body: JSON.stringify({
+        title: `[AIBTI] ${role.name} · ${p.level} · ${p.name}`,
+        body,
+        labels
+      })
+    });
+    const data = await res.json();
+    return { ok: !!data.number, number: data.number };
+  } catch(e) {
+    return { ok: false, err: e.message };
+  }
+}
 
 /* ===== API 层 · 失败自动降级到 localStorage ===== */
 const API = {
@@ -1486,6 +1522,22 @@ function go(id){
   $(id).classList.remove('hidden');
   window.scrollTo(0,0);
 }
+/* 统计按钮 */
+$('btnStats').onclick = async ()=>{
+  const r = state.lastResult; if(!r) return;
+  const btn = $('btnStats');
+  btn.textContent = '提交中...'; btn.disabled = true;
+  const res = await submitGithubStats(r);
+  if(res.ok){
+    btn.textContent = '已提交 ✓';
+    btn.classList.add('done');
+    $('statsCard').querySelector('.stats-desc').textContent = '感谢参与！数据已匿名记录到统计系统';
+  } else {
+    btn.textContent = '一键提交';
+    btn.disabled = false;
+  }
+};
+
 $('btnStart').onclick = ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('quiz'); renderQuestion(); };
 $('btnStartFromGal').onclick = ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('quiz'); renderQuestion(); };
 $('btnRetry').onclick = ()=>{ state.idx=0; state.answers=Array(QUESTIONS.length).fill(null); go('welcome'); };
