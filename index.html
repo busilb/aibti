@@ -1380,7 +1380,7 @@ function drawRadar(scores){
       const a=Math.PI*2*i/N - Math.PI/2;
       return (cx+Math.cos(a)*R*r).toFixed(1)+','+(cy+Math.sin(a)*R*r).toFixed(1);
     }).join(' ');
-    grids += `<polygon points="${p}" fill="none" stroke="rgba(255,255,255,${r===1?.12:.05})" stroke-width="1"/>`;
+    grids += `<polygon points="${p}" fill="none" stroke="rgba(255,255,255,${r===1 ? 0.12 : 0.05})" stroke-width="1"/>`;
   });
   let axes='', labels='', pts=[];
   keys.forEach((k,i)=>{
@@ -1533,8 +1533,7 @@ $('btnChallenge').onclick = ()=>{
 
 /* 分享海报 */
 $('btnShareImage').onclick = async ()=>{
-  const r = state.lastResult;
-  if(!r){ alert('DEBUG: state.lastResult 未设置，请先完成测评再点生成海报'); return; }
+  const r = state.lastResult; if(!r) return;
   $('shareModal').classList.remove('hidden');
   $('shareImg').style.display = 'none';
   $('shareImgLoading').style.display = 'block';
@@ -1727,7 +1726,7 @@ async function generatePoster(r) {
       i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
     });
     ctx.closePath();
-    ctx.strokeStyle = `rgba(255,255,255,${ratio===1?.18:.05})`;
+    ctx.strokeStyle = `rgba(255,255,255,${ratio===1 ? 0.18 : 0.05})`;
     ctx.lineWidth = 0.8; ctx.stroke(); ctx.restore();
   });
   // 轴线
