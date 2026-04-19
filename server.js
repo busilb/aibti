@@ -131,7 +131,8 @@ function getTickerLines(results, n = 10) {
     .reverse()
     .map(r => ({
       bu: r.bu, role: r.role, level: r.level,
-      personaName: r.personaName, ts: r.ts
+      personaName: r.personaName, ts: r.ts,
+      city: r.city || '', region: r.region || ''
     }));
 }
 
