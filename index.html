@@ -1698,7 +1698,8 @@ async function generatePoster(r) {
     });
   }
   const avatarSrc = `https://cdn.jsdelivr.net/gh/busilb/aibti@main/image/${p.code}.png`;
-  const avatarImg = await loadImg(avatarSrc);
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent('https://busilb.github.io/aibti/')}&size=180x180&color=e8d5ff&bgcolor=1a0a2e&qzone=1&margin=0`;
+  const [avatarImg, qrImg] = await Promise.all([loadImg(avatarSrc), loadImg(qrSrc)]);
 
   ctx.save();
   ctx.beginPath(); ctx.arc(AC.x, AC.y, AC.r, 0, Math.PI*2); ctx.clip();
@@ -1859,7 +1860,8 @@ async function generatePoster(r) {
   ctx.restore();
 
   // ══════════════════════════════
-  //  § 7  底部分割线 + 页脚 (y=916~)
+  //  § 7  底部分割线 + 页脚 (y=916~1060)
+  //  左侧: CTA 文字 + URL   右侧: 二维码 90×90
   // ══════════════════════════════
   const FOOT_Y = 916;
   ctx.save();
@@ -1867,16 +1869,37 @@ async function generatePoster(r) {
   ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(60,FOOT_Y); ctx.lineTo(W-60,FOOT_Y); ctx.stroke();
   ctx.restore();
 
+  // ── 右侧：二维码 ──
+  const QR = { x: 570, y: FOOT_Y + 18, size: 100 };  // 90×90 逻辑像素
+  if (qrImg) {
+    // 圆角背景
+    ctx.save();
+    roundRect(QR.x - 6, QR.y - 6, QR.size + 12, QR.size + 12, 10);
+    ctx.fillStyle = '#1a0a2e'; ctx.fill();
+    ctx.strokeStyle = 'rgba(168,85,247,.4)'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.drawImage(qrImg, QR.x, QR.y, QR.size, QR.size);
+    ctx.restore();
+    // "扫码测评" 标签
+    ctx.save();
+    ctx.font = `500 14px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(168,150,210,.7)';
+    ctx.fillText('扫码测评', QR.x + QR.size / 2, QR.y + QR.size + 14);
+    ctx.restore();
+  }
+
+  // ── 左侧：CTA 文字 ──
+  const textRight = qrImg ? QR.x - 18 : W - 60;
   ctx.save();
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  // 主 CTA：邀请对比
-  ctx.font = `700 24px ${FONT}`;
-  ctx.fillStyle = hGrad(CX-200,CX+200, 0,'#a855f7', 0.5,'#ec4899', 1,'#06b6d4');
-  ctx.fillText('你的 AI 段位是什么？来挑战我 →', CX, FOOT_Y + 32);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  // 主 CTA
+  ctx.font = `700 21px ${FONT}`;
+  ctx.fillStyle = hGrad(60, textRight, 0,'#a855f7', 0.6,'#ec4899', 1,'#06b6d4');
+  ctx.fillText('你的 AI 段位', 60, FOOT_Y + 36);
+  ctx.fillText('是什么？来挑战我 →', 60, FOOT_Y + 64);
   // URL
-  ctx.font = `500 17px ${MONO}`;
-  ctx.fillStyle = 'rgba(168,150,210,.65)';
-  ctx.fillText('busilb.github.io/aibti', CX, FOOT_Y + 62);
+  ctx.font = `500 15px ${MONO}`;
+  ctx.fillStyle = 'rgba(168,150,210,.6)';
+  ctx.fillText('busilb.github.io/aibti', 60, FOOT_Y + 96);
   ctx.restore();
 
   return canvas.toDataURL('image/png');
