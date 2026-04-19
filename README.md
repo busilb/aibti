@@ -12,9 +12,7 @@ node server.js
 open index.html   # 或配置 API_BASE 后联调
 
 # 管理员看板
-open http://localhost:3000/admin?password=aibti2025
-```
-
+open http://localhost:3000/admin
 ## 部署
 
 - **前端**：`index.html` 上传到 1d.alibaba-inc.com 或任意静态托管
