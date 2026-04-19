@@ -207,15 +207,16 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
   letter-spacing:-.01em;color:var(--text)}
 .options{display:flex;flex-direction:column;gap:10px}
 .opt{background:rgba(255,255,255,.05);border:1.5px solid var(--border);border-radius:18px;
-  padding:16px 18px;cursor:pointer;transition:all .2s;font-size:14px;line-height:1.55;
+  padding:16px 18px;cursor:pointer;transition:background .18s,border-color .18s,box-shadow .18s,transform .12s;
+  font-size:14px;line-height:1.55;
   color:var(--text);text-align:left;font-family:inherit;display:flex;gap:12px;
-  align-items:flex-start;backdrop-filter:blur(10px)}
+  align-items:flex-start}
 .opt:active{transform:scale(.98)}
 .opt.sel{background:linear-gradient(135deg,rgba(168,85,247,.2),rgba(236,72,153,.15));
   border-color:var(--p);box-shadow:0 0 0 2px rgba(168,85,247,.25),0 4px 20px rgba(168,85,247,.15)}
 .opt-letter{flex:0 0 26px;height:26px;border-radius:50%;background:rgba(255,255,255,.08);
   display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;
-  color:var(--text-sec);margin-top:1px;font-family:ui-monospace,Menlo,monospace;transition:all .2s}
+  color:var(--text-sec);margin-top:1px;font-family:ui-monospace,Menlo,monospace;transition:background .18s,color .18s,box-shadow .18s}
 .opt.sel .opt-letter{background:var(--g2);color:#fff;box-shadow:0 4px 12px rgba(168,85,247,.5)}
 
 /* ── 结果页 ── */
@@ -482,7 +483,7 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 /* ── 动画 ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(.9)}}
-.anim{animation:fadeUp .4s ease both}
+.anim{animation:fadeUp .18s ease both}
 </style>
 </head>
 <body>
@@ -1034,9 +1035,9 @@ const $ = id => document.getElementById(id);
 const findP = code => PERSONAS.find(p=>p.code===code);
 const findLevel = code => LEVELS.find(l=>l.code===code);
 
-/* iOS 双击缩放防护：仅对非按钮的交互元素阻止 touchend 默认行为，保留 button 的 click 合成 */
+/* iOS 双击缩放防护：仅对卡片类元素阻止默认行为（.opt 是 button，touch-action:manipulation 已处理，不能 preventDefault 否则会吃掉 click） */
 document.addEventListener('touchend', function(e){
-  if(e.target.closest('.opt,.hot-card,.gal-card,.lv')){
+  if(e.target.closest('.hot-card,.gal-card,.lv')){
     e.preventDefault();
   }
 }, {passive: false});
@@ -1286,6 +1287,31 @@ let state = {
   });
 })();
 
+/* ===== QUIZ — 事件委托：只绑定一次，不随 innerHTML 刷新重绑 ===== */
+(function initQuizDelegate(){
+  const qBody = $('qBody');
+  if(!qBody) return;
+  qBody.addEventListener('click', function(e){
+    const opt = e.target.closest('.opt');
+    if(!opt || opt.disabled) return;
+    // 防重复触发：选中后立即禁用所有选项
+    const allOpts = qBody.querySelectorAll('.opt');
+    allOpts.forEach(x=>{ x.classList.remove('sel'); x.disabled = true; });
+    opt.classList.add('sel');
+    state.answers[state.idx] = +opt.dataset.i;
+    setTimeout(()=>{
+      allOpts.forEach(x=>{ x.disabled = false; });
+      if(state.idx < QUESTIONS.length - 1){
+        state.idx++;
+        renderQuestion();
+      } else {
+        go('result');
+        renderResult();
+      }
+    }, 120);
+  });
+})();
+
 /* ===== QUIZ ===== */
 function renderQuestion(){
   const i = state.idx;
@@ -1311,22 +1337,6 @@ function renderQuestion(){
       <div class="options">${opts}</div>
     </div>`;
 
-  $('qBody').querySelectorAll('.opt').forEach(el=>{
-    el.onclick = ()=>{
-      $('qBody').querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
-      el.classList.add('sel');
-      state.answers[i] = +el.dataset.i;
-      setTimeout(()=>{
-        if(state.idx < QUESTIONS.length-1){
-          state.idx++;
-          renderQuestion();
-        } else {
-          go('result');
-          renderResult();
-        }
-      }, 200);
-    };
-  });
   window.scrollTo(0,0);
 }
 
