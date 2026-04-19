@@ -96,7 +96,14 @@ async function fetchIssueHistory(n = 100) {
     const ts = issue.created_at || '';
     // 北京时间格式化
     const tsLocal = ts ? new Date(ts).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }) : '';
-    return { ts: tsLocal, level: lv, personaName, personaCode, role, city: city||'', region: region||'' };
+    // tsIso：用于趋势图时间桶（保留 UTC ISO 原始格式）
+    // 转成北京时间 ISO 字符串，取前 13 位得到 "2026-04-19T19"
+    const tsIso = ts ? (() => {
+      const d = new Date(ts);
+      const cst = new Date(d.getTime() + 8 * 3600000);
+      return cst.toISOString().replace('Z', '+08:00');
+    })() : '';
+    return { ts: tsLocal, tsIso, level: lv, personaName, personaCode, role, city: city||'', region: region||'' };
   });
 }
 
@@ -215,17 +222,19 @@ function adminCheck(req, res) {
 
 /* ── 管理员 HTML 看板 ── */
 function adminHTML(stats, results) {
-  // 最近 48 小时每小时趋势（基于提交记录的 ts 字段）
+  // 最近 48 小时每小时趋势（北京时间，key 格式 "2026-04-19T19"）
   const now = Date.now();
   const hourBuckets = {};
   for (let i = 47; i >= 0; i--) {
-    const d = new Date(now - i * 3600000);
-    const key = d.toISOString().slice(0, 13); // "2026-04-19T10"
-    const label = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:00`;
+    const utc = new Date(now - i * 3600000);
+    const cst = new Date(utc.getTime() + 8 * 3600000); // +8 北京时间
+    const key = cst.toISOString().slice(0, 13);         // "2026-04-19T19"（北京时间时）
+    const label = `${String(cst.getUTCMonth()+1).padStart(2,'0')}/${String(cst.getUTCDate()).padStart(2,'0')} ${String(cst.getUTCHours()).padStart(2,'0')}:00`;
     hourBuckets[key] = { label, count: 0 };
   }
   results.forEach(r => {
-    const key = (r.ts || '').slice(0, 13);
+    // 用 tsIso（北京时间 ISO 格式）做时间桶，格式 "2026-04-19T19"
+    const key = (r.tsIso || r.ts || '').slice(0, 13);
     if (hourBuckets[key]) hourBuckets[key].count++;
   });
   const trendLabels = JSON.stringify(Object.values(hourBuckets).map(b => b.label));
