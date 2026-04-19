@@ -1876,25 +1876,28 @@ async function generatePoster(r) {
   ctx.fillText(chipText, CX, chipY + chipH/2);
   ctx.restore();
 
-  // ── 稀有度副标签（测量宽度精确居中，避免数字错位）──
+  // ── 稀有度副标签（同字族、顺序绘制，彻底杜绝错位）──
   {
     ctx.save();
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    const rareY = 478;
-    const seg1 = '全网仅 ', seg2 = p.rare, seg3 = ' 是这个类型';
-    ctx.font = `500 15px ${FONT}`; const w1 = ctx.measureText(seg1).width;
-    ctx.font = `700 16px ${MONO}`; const w2 = ctx.measureText(seg2).width;
-    ctx.font = `500 15px ${FONT}`; const w3 = ctx.measureText(seg3).width;
+    const rareY = 480;
+    const seg1 = '全网仅  ', seg2 = p.rare, seg3 = '  是这个类型';
+    // 同字体族确保 measureText 与实际渲染完全一致
+    ctx.font = `500 16px ${FONT}`; const w1 = ctx.measureText(seg1).width;
+    ctx.font = `800 22px ${FONT}`; const w2 = ctx.measureText(seg2).width;
+    ctx.font = `500 16px ${FONT}`; const w3 = ctx.measureText(seg3).width;
     let rx = CX - (w1 + w2 + w3) / 2;
 
-    ctx.font = `500 15px ${FONT}`; ctx.fillStyle = 'rgba(168,150,210,.65)';
+    ctx.fillStyle = 'rgba(168,150,210,.65)';
+    ctx.font = `500 16px ${FONT}`;
     ctx.fillText(seg1, rx, rareY); rx += w1;
 
-    ctx.font = `700 16px ${MONO}`;
-    ctx.fillStyle = hGrad(rx - 2, rx + w2 + 2, 0,'#a855f7', 1,'#ec4899');
+    ctx.font = `800 22px ${FONT}`;
+    ctx.fillStyle = hGrad(rx - 4, rx + w2 + 4, 0,'#a855f7', 1,'#ec4899');
     ctx.fillText(seg2, rx, rareY); rx += w2;
 
-    ctx.font = `500 15px ${FONT}`; ctx.fillStyle = 'rgba(168,150,210,.65)';
+    ctx.font = `500 16px ${FONT}`;
+    ctx.fillStyle = 'rgba(168,150,210,.65)';
     ctx.fillText(seg3, rx, rareY);
     ctx.restore();
   }
