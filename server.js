@@ -233,12 +233,11 @@ function adminCheck(req, res) {
 
 /* ── 管理员 SPA（纯前端，自动 30s 刷新） ── */
 function adminSPA(pwd) {
-  const API = `/api`;
+  const API = ``;
   return `<!DOCTYPE html>
 <html lang="zh"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AIBTI 数据看板</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,"PingFang SC",sans-serif;background:#08090c;color:#f0f0f5;padding:16px}
@@ -343,7 +342,19 @@ function buildFilteredStats(records) {
   return { total, ogPct: total>0?(ogCount/total*100).toFixed(1)+'%':'0%', byLevel, byPersona, byRole, byCity };
 }
 
-function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+// 动态加载 Chart.js（失败不影响数据表格）
+let chartJsLoaded = false;
+function loadChartJs() {
+  if (chartJsLoaded || typeof Chart !== 'undefined') { chartJsLoaded=true; return Promise.resolve(); }
+  return new Promise((res,rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    s.onload = () => { chartJsLoaded=true; res(); };
+    s.onerror = () => { console.warn('Chart.js CDN 加载失败，图表不可用'); res(); };
+    document.head.appendChild(s);
+  });
+}
+function destroyChart(id){ try{ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }catch(e){} }
 
 // 带超时的 fetch（默认 25s）
 function fetchWithTimeout(url, ms=25000) {
@@ -425,7 +436,10 @@ function renderHistory(records) {
     (rows || '<tr><td colspan="6" class="loading">暂无数据</td></tr>');
 }
 
-function renderCharts(stats, records) {
+async function renderCharts(stats, records) {
+  try { await loadChartJs(); } catch(e) { return; }
+  if (typeof Chart === 'undefined') return; // Chart.js 未加载，跳过图表
+  try {
   // 趋势图（北京时间，从上线到现在）
   const LAUNCH = new Date('2026-04-18T16:00:00Z');
   const now = Date.now();
@@ -485,6 +499,7 @@ function renderCharts(stats, records) {
         scales:{ x:{ticks:{color:C.tick,stepSize:1},grid:{color:C.grid},beginAtZero:true}, y:{ticks:{color:C.text,font:{size:13}},grid:{display:false}} } }
     });
   }
+  } catch(chartErr) { console.warn('图表渲染失败:', chartErr.message); }
 }
 
 function startCountdown() {
