@@ -29,6 +29,26 @@ const GH_TOKEN = process.env.GH_STATS_TOKEN ||
 const GH_REPO  = 'busilb/aibti';
 const DIMS_MAP = { PROMPT:'提示工程', TOOLS:'工具广度', SCENE:'场景洞察', TRUTH:'幻觉警觉', FLOW:'流程融合', FAITH:'AI 信仰' };
 
+/* ── IP → 城市查询（ip-api.com 免费，无需 key） ── */
+function lookupCity(ip) {
+  return new Promise(resolve => {
+    const isPrivate = !ip || ip === '::1' || /^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(ip);
+    if (isPrivate) return resolve({ city: '内网', region: '局域网' });
+    const cleanIp = ip.replace(/^::ffff:/, '');
+    http.get(`http://ip-api.com/json/${cleanIp}?lang=zh-CN&fields=city,regionName,country,status`, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        try {
+          const j = JSON.parse(d);
+          if (j.status === 'success') resolve({ city: j.city || '未知', region: j.regionName || j.country || '未知' });
+          else resolve({ city: '未知', region: '未知' });
+        } catch { resolve({ city: '未知', region: '未知' }); }
+      });
+    }).on('error', () => resolve({ city: '未知', region: '未知' }));
+  });
+}
+
 /* ── GitHub Issues 创建 ── */
 async function createGHIssue(record) {
   if (!GH_TOKEN) return null;
@@ -82,23 +102,25 @@ function saveData(data) {
 /* ── 聚合统计 ── */
 function calcStats(results) {
   const total = results.length;
-  if (total === 0) return { total: 0, ogPct: '0%', byLevel: {}, byPersona: {}, byBU: {}, byRole: {} };
+  if (total === 0) return { total: 0, ogPct: '0%', byLevel: {}, byPersona: {}, byBU: {}, byRole: {}, byCity: {} };
 
-  const byLevel = {}, byPersona = {}, byBU = {}, byRole = {};
+  const byLevel = {}, byPersona = {}, byBU = {}, byRole = {}, byCity = {};
   let ogCount = 0;
 
   results.forEach(r => {
-    byLevel[r.level]      = (byLevel[r.level] || 0) + 1;
+    byLevel[r.level]         = (byLevel[r.level] || 0) + 1;
     byPersona[r.personaCode] = (byPersona[r.personaCode] || 0) + 1;
-    byBU[r.bu]            = (byBU[r.bu] || 0) + 1;
-    byRole[r.role]        = (byRole[r.role] || 0) + 1;
+    byBU[r.bu]               = (byBU[r.bu] || 0) + 1;
+    byRole[r.role]           = (byRole[r.role] || 0) + 1;
+    const city = r.city || '未知';
+    byCity[city]             = (byCity[city] || 0) + 1;
     if (r.personaCode === 'OG-FARMER') ogCount++;
   });
 
   return {
     total,
     ogPct: total > 0 ? (ogCount / total * 100).toFixed(1) + '%' : '0%',
-    byLevel, byPersona, byBU, byRole
+    byLevel, byPersona, byBU, byRole, byCity
   };
 }
 
@@ -173,11 +195,20 @@ function adminHTML(stats, results) {
   const pData   = JSON.stringify(personaEntries.map(([,v]) => v));
   const pColors_= JSON.stringify(pColors.slice(0, personaEntries.length));
 
+  // 城市分布（水平条形图，Top 10）
+  const cityEntries = Object.entries(stats.byCity || {})
+    .filter(([c]) => c !== '未知' && c !== '')
+    .sort((a,b) => b[1]-a[1]).slice(0, 10);
+  const cityLabels = JSON.stringify(cityEntries.map(([c]) => c));
+  const cityData   = JSON.stringify(cityEntries.map(([,v]) => v));
+  const hasCityData = cityEntries.length > 0;
+
   // 最近 20 条记录表格
   const recentRows = results.slice(-20).reverse()
     .map(r => {
       const ts = r.ts ? new Date(r.ts).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}).replace(/\//g,'-') : '';
-      return `<tr><td>${ts}</td><td>${r.role||'-'}</td><td>${r.level||'-'}</td><td>${r.personaName||'-'}</td></tr>`;
+      const loc = r.city ? `${r.city}` : '-';
+      return `<tr><td>${ts}</td><td>${r.role||'-'}</td><td>${r.level||'-'}</td><td>${r.personaName||'-'}</td><td>${loc}</td></tr>`;
     }).join('');
 
   return `<!DOCTYPE html>
@@ -240,10 +271,17 @@ tr:hover td{background:rgba(255,255,255,.03)}
   </div>
 </div>
 
+${hasCityData ? `
+<div class="sec">
+  <h2>城市分布（基于提交 IP）</h2>
+  <p style="font-size:11px;color:#52525b;margin-bottom:12px">注：内网用户 IP 可能集中显示为公司所在城市</p>
+  <div class="chart-wrap" style="height:${Math.max(120, cityEntries.length * 36)}px"><canvas id="cityChart"></canvas></div>
+</div>` : ''}
+
 <div class="sec">
   <h2>最近 20 条记录</h2>
   <table>
-    <tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th></tr>
+    <tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th><th>城市</th></tr>
     ${recentRows}
   </table>
 </div>
@@ -297,6 +335,33 @@ new Chart(document.getElementById('lvChart'), {
   }
 });
 
+// 城市水平条形图
+if (document.getElementById('cityChart')) {
+  new Chart(document.getElementById('cityChart'), {
+    type: 'bar',
+    data: {
+      labels: ${cityLabels},
+      datasets: [{
+        label: '人数',
+        data: ${cityData},
+        backgroundColor: 'rgba(6,182,212,.65)',
+        borderColor: '#06b6d4',
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: C.tick, stepSize: 1 }, grid: { color: C.grid }, beginAtZero: true },
+        y: { ticks: { color: C.text, font: { size: 13 } }, grid: { display: false } }
+      }
+    }
+  });
+}
+
 // 人格饼图
 new Chart(document.getElementById('pChart'), {
   type: 'doughnut',
@@ -334,10 +399,19 @@ const server = http.createServer(async (req, res) => {
   // POST /api/submit - 接收测评结果
   if (req.method === 'POST' && path_ === '/api/submit') {
     const body = await readBody(req);
+    // 提取客户端真实 IP（FC 经过负载均衡，从 x-forwarded-for 取第一个）
+    const clientIp = (req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+      || req.headers['x-real-ip']
+      || req.socket?.remoteAddress || '';
+    // 异步查城市（不阻塞主流程，查完后追加更新）
+    const cityInfo = await lookupCity(clientIp);
     const data = loadData();
     const record = {
       id:   crypto.randomBytes(8).toString('hex'),
       ts:   new Date().toISOString(),
+      ip:   clientIp.replace(/^::ffff:/, '').slice(0, 45), // 脱敏：只存 IP，不存完整
+      city:   cityInfo.city,
+      region: cityInfo.region,
       bu:   String(body.bu   || '').slice(0, 30),
       dept: String(body.dept || '').slice(0, 30),
       role: String(body.role || '').slice(0, 10),
@@ -349,9 +423,8 @@ const server = http.createServer(async (req, res) => {
     data.results.push(record);
     saveData(data);
     const stats = calcStats(data.results);
-    // 异步创建 GitHub Issue（不阻塞响应）
     createGHIssue(record).then(issue => {
-      if (issue && issue.number) console.log(`[GH Issue] #${issue.number} ${record.level} ${record.personaName}`);
+      if (issue && issue.number) console.log(`[GH Issue] #${issue.number} ${record.level} ${record.personaName} @${cityInfo.city}`);
     });
     return json(res, { ok: true, total: stats.total });
   }
