@@ -1519,7 +1519,7 @@ $('btnShare').onclick = ()=>{
 };
 
 /* 复制挑战链接 */
-$('btnChallenge').onclick = ()=>{
+if($('btnChallenge')) $('btnChallenge').onclick = ()=>{
   if(!state.challengeURL) return;
   const r = state.lastResult;
   const text = `【AIBTI · 挑战】${state.challengerName} 邀你 PK（我是 ${r.p.level} · ${r.role.name}${r.p.name}）\n\n点链接看看你的 AI 段位有没有我高 →\n${state.challengeURL}`;
