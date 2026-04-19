@@ -42,6 +42,18 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .b-test{font-size:10px;background:rgba(107,114,128,.2);color:#9ca3af;padding:1px 6px;border-radius:99px}
 .loading{text-align:center;padding:40px;color:#52525b}
 #dashboard{display:none}
+/* 日期筛选栏 */
+.filter-bar{background:#11131a;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.filter-bar .fl-label{font-size:11px;color:#8a8e9a;letter-spacing:.1em;text-transform:uppercase;font-weight:700;white-space:nowrap}
+.filter-bar .fl-divider{width:1px;height:18px;background:rgba(255,255,255,.08);flex-shrink:0}
+.date-input{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#d4d4d8;font-size:12px;padding:5px 10px;outline:none;font-family:inherit;cursor:pointer;color-scheme:dark}
+.date-input:focus{border-color:rgba(168,85,247,.5)}
+.date-sep{color:#52525b;font-size:12px}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.preset-btn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#8a8e9a;padding:4px 11px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s}
+.preset-btn:hover{background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.3);color:#c4a8f8}
+.preset-btn.active{background:rgba(168,85,247,.2);border-color:rgba(168,85,247,.5);color:#c4a8f8;font-weight:600}
+.fl-hint{font-size:11px;color:#a855f7;background:rgba(168,85,247,.12);padding:3px 10px;border-radius:6px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -70,6 +82,24 @@ tr:hover td{background:rgba(255,255,255,.02)}
     </div>
   </div>
 
+  <!-- 日期筛选栏 -->
+  <div class="filter-bar">
+    <span class="fl-label">日期区间</span>
+    <div class="fl-divider"></div>
+    <input type="date" id="dateFrom" class="date-input" onchange="onDateInput()" title="开始日期">
+    <span class="date-sep">—</span>
+    <input type="date" id="dateTo" class="date-input" onchange="onDateInput()" title="结束日期">
+    <div class="fl-divider"></div>
+    <div class="presets">
+      <button class="preset-btn active" id="presetAll"     onclick="setPreset('all')">全部</button>
+      <button class="preset-btn"        id="presetToday"   onclick="setPreset('today')">今天</button>
+      <button class="preset-btn"        id="presetYest"    onclick="setPreset('yesterday')">昨天</button>
+      <button class="preset-btn"        id="preset3d"      onclick="setPreset('3d')">近 3 天</button>
+      <button class="preset-btn"        id="preset7d"      onclick="setPreset('7d')">近 7 天</button>
+    </div>
+    <span class="fl-hint" id="filterHint" style="display:none"></span>
+  </div>
+
   <div class="cards">
     <div class="card"><div class="num" id="cTotal">-</div><div class="lbl">总测评人次</div></div>
     <div class="card"><div class="num" id="cReal">-</div><div class="lbl">真实用户</div></div>
@@ -77,7 +107,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
   </div>
 
   <div class="sec">
-    <h2>每小时趋势（上线至今 · 2026/04/19 起）</h2>
+    <h2 id="trendTitle">每小时趋势（上线至今）</h2>
     <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
   </div>
 
@@ -175,13 +205,58 @@ async function loadData() {
   startCountdown();
 }
 
+// 北京时间今日日期字符串 "YYYY-MM-DD"
+function bjToday(offset=0) {
+  const d = new Date(Date.now() + 8*3600000 + offset*86400000);
+  return d.toISOString().slice(0,10);
+}
+
+function setPreset(preset) {
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  const idMap = {all:'presetAll',today:'presetToday',yesterday:'presetYest','3d':'preset3d','7d':'preset7d'};
+  document.getElementById(idMap[preset]).classList.add('active');
+  const fromEl=document.getElementById('dateFrom'), toEl=document.getElementById('dateTo');
+  switch(preset) {
+    case 'all':       fromEl.value=''; toEl.value=''; break;
+    case 'today':     fromEl.value=bjToday();    toEl.value=bjToday(); break;
+    case 'yesterday': fromEl.value=bjToday(-1);  toEl.value=bjToday(-1); break;
+    case '3d':        fromEl.value=bjToday(-2);  toEl.value=bjToday(); break;
+    case '7d':        fromEl.value=bjToday(-6);  toEl.value=bjToday(); break;
+  }
+  applyFilter();
+}
+
+function onDateInput() {
+  // 手动改日期时清除 preset 高亮
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  applyFilter();
+}
+
 function applyFilter() {
   const hide = document.getElementById('hideTest').checked;
-  const filtered = hide ? allRecords.filter(r=>!r.isTest) : allRecords;
+  const dateFrom = document.getElementById('dateFrom').value; // "YYYY-MM-DD" or ""
+  const dateTo   = document.getElementById('dateTo').value;
+
+  let filtered = allRecords;
+  if (hide) filtered = filtered.filter(r=>!r.isTest);
+
+  // 日期过滤：tsIso 前 10 位 = 北京日期 "YYYY-MM-DD"
+  if (dateFrom) filtered = filtered.filter(r=>(r.tsIso||'').slice(0,10) >= dateFrom);
+  if (dateTo)   filtered = filtered.filter(r=>(r.tsIso||'').slice(0,10) <= dateTo);
+
+  // 筛选提示
+  const hint = document.getElementById('filterHint');
+  if (dateFrom || dateTo) {
+    hint.style.display='inline';
+    hint.textContent = (dateFrom||'…')+' → '+(dateTo||'…')+' · '+filtered.length+' 条';
+  } else {
+    hint.style.display='none';
+  }
+
   const s = buildStats(filtered);
   renderStats(s);
   renderHistory(filtered);
-  renderCharts(s, filtered);
+  renderCharts(s, filtered, dateFrom, dateTo);
 }
 
 function buildStats(records) {
@@ -232,7 +307,7 @@ function loadChartJs() {
 }
 function dc(id){try{if(charts[id]){charts[id].destroy();delete charts[id];}}catch(e){}}
 
-async function renderCharts(stats,records){
+async function renderCharts(stats,records,dateFrom,dateTo){
   await loadChartJs();
   if(typeof Chart==='undefined') return;
   try {
@@ -245,7 +320,17 @@ async function renderCharts(stats,records){
       const lbl=(cst.getUTCMonth()+1+'').padStart(2,'0')+'/'+(cst.getUTCDate()+'').padStart(2,'0')+' '+(cst.getUTCHours()+'').padStart(2,'0')+':00';
       buckets[key]={lbl,count:0};
     }
+    // 日期范围过滤：bucket key 前 10 位是北京日期
+    if(dateFrom||dateTo){
+      Object.keys(buckets).forEach(k=>{
+        const d=k.slice(0,10);
+        if((dateFrom&&d<dateFrom)||(dateTo&&d>dateTo)) delete buckets[k];
+      });
+    }
     records.forEach(r=>{const k=(r.tsIso||'').slice(0,13);if(buckets[k])buckets[k].count++;});
+    const trendTitle = document.getElementById('trendTitle');
+    if(dateFrom||dateTo) trendTitle.textContent='每小时趋势 · '+(dateFrom||'…')+' → '+(dateTo||'…');
+    else trendTitle.textContent='每小时趋势（上线至今）';
     dc('trend');
     charts.trend=new Chart(document.getElementById('trendChart'),{
       type:'bar',
