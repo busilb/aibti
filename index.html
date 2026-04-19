@@ -4,7 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#08090c">
+<meta name="theme-color" content="#0d0015">
+<meta name="description" content="AIBTI · 你是哪种 AI 打工人 · 阿里内部 AI 能力测评 · 18题4分钟测出你在 OpenClaw/御三家时代的真实段位">
+<meta property="og:title" content="AIBTI · 你是哪种 AI 打工人">
+<meta property="og:description" content="18题·4分钟·5个等级·15个人格·4岗位定制，测出你的 AI 段位">
+<meta property="og:type" content="website">
 <title>AIBTI · 你是哪种 AI 打工人</title>
 <style>
 /* ===== Z世代 设计语言 · 紫粉青三色宇宙 ===== */
@@ -1034,12 +1038,14 @@ const $ = id => document.getElementById(id);
 const findP = code => PERSONAS.find(p=>p.code===code);
 const findLevel = code => LEVELS.find(l=>l.code===code);
 
-// 本地用 /image/，生产用 GitHub Raw CDN
+// 图片 CDN 策略：本地 > GitHub Raw > SVG 兜底
+// 如有阿里云 OSS，在下方填入地址替换 GITHUB_IMG
 const IS_LOCAL = typeof location!=='undefined' &&
   (location.hostname==='localhost'||location.hostname==='127.0.0.1'||location.hostname==='192.168.31.73');
-const IMG_BASE = IS_LOCAL
-  ? 'image'
-  : 'https://raw.githubusercontent.com/busilb/aibti/main/image';
+const GITHUB_IMG = 'https://raw.githubusercontent.com/busilb/aibti/main/image';
+// 如果有内网 CDN 地址，在下面替换（留空则只用 GitHub Raw）
+const OSS_IMG = '';
+const IMG_BASE = IS_LOCAL ? 'image' : (OSS_IMG || GITHUB_IMG);
 
 function avatarHTML(p){
   const svg = ICONS[p.code] || '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#fff"/></svg>';
