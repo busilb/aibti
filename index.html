@@ -1698,7 +1698,7 @@ on('btnCopyShareText', ()=> { const b = $('btnShare'); if(b) b.click(); });
 async function generatePoster(r) {
   const {p, scores, role, lv} = r;
   // 2x 分辨率，保证手机截图清晰
-  const W = 750, H = 1060, DPR = 2;
+  const W = 750, H = 1120, DPR = 2;
   const canvas = document.createElement('canvas');
   canvas.width = W * DPR; canvas.height = H * DPR;
   const ctx = canvas.getContext('2d');
@@ -1862,39 +1862,39 @@ async function generatePoster(r) {
   ctx.fillText(`"${p.slogan}"`, CX, 408);
   ctx.restore();
 
-  // ── 等级 Chip + 稀有度强调 (y=428~490) ──
+  // ── 等级 Chip (y=428) + 稀有度副标签 (y=474) ──
   const chipText = `${p.level}  ·  ${lv.name}`;
   ctx.save();
-  ctx.font = `500 16px ${MONO}`;
+  ctx.font = `600 17px ${MONO}`;
   ctx.textAlign = 'center';
-  const chipW = Math.min(ctx.measureText(chipText).width + 44, W - 100);
-  const chipH = 32, chipX = CX - chipW/2, chipY = 428;
+  const chipW = Math.min(ctx.measureText(chipText).width + 48, W - 100);
+  const chipH = 34, chipX = CX - chipW/2, chipY = 428;
   roundRect(chipX, chipY, chipW, chipH, chipH/2);
-  ctx.fillStyle = 'rgba(168,85,247,.14)'; ctx.fill();
-  ctx.strokeStyle = 'rgba(168,85,247,.38)'; ctx.lineWidth = 1; ctx.stroke();
-  ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(210,190,255,.88)';
+  ctx.fillStyle = 'rgba(168,85,247,.16)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(168,85,247,.42)'; ctx.lineWidth = 1.2; ctx.stroke();
+  ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(215,195,255,.92)';
   ctx.fillText(chipText, CX, chipY + chipH/2);
   ctx.restore();
 
-  // ── 稀有度大字（传播钩子）──
+  // ── 稀有度副标签（单行居中，紧贴 chip）──
   ctx.save();
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-  ctx.font = `800 18px ${FONT}`;
-  ctx.fillStyle = 'rgba(180,160,230,.55)';
-  ctx.fillText('全网仅', CX - 52, 490);
-  ctx.font = `900 26px ${MONO}`;
-  ctx.fillStyle = hGrad(CX-40, CX+40, 0,'#a855f7', 1,'#ec4899');
-  ctx.fillText(p.rare, CX - 2, 492);
-  ctx.font = `800 18px ${FONT}`;
-  ctx.fillStyle = 'rgba(180,160,230,.55)';
-  ctx.fillText('是这个类型', CX + 58, 490);
+  ctx.font = `500 15px ${FONT}`;
+  ctx.fillStyle = 'rgba(168,150,210,.65)';
+  ctx.fillText('全网仅 ', CX - 34, 477);
+  ctx.font = `700 17px ${MONO}`;
+  ctx.fillStyle = hGrad(CX-30, CX+30, 0,'#a855f7', 1,'#ec4899');
+  ctx.fillText(p.rare, CX + 4, 477);
+  ctx.font = `500 15px ${FONT}`;
+  ctx.fillStyle = 'rgba(168,150,210,.65)';
+  ctx.fillText(' 是这个类型', CX + 46, 477);
   ctx.restore();
 
   // ══════════════════════════════
-  //  § 5  六维雷达 (中心 y=620, r=105)
-  //  chip 底部: 428+32=460 → 雷达顶标签: 620-105-28=487 → 间距 27px ✓
+  //  § 5  六维雷达 (中心 y=668, r=108)
+  //  rare底部: y≈480 → 雷达顶标签: 668-108-30=530 → 间距 50px ✓
   // ══════════════════════════════
-  const RC = { x: CX, y: 622, r: 105 };
+  const RC = { x: CX, y: 668, r: 108 };
   const dimKeys = ['PROMPT','TOOLS','SCENE','TRUTH','FLOW','FAITH'];
   const NN = 6;
 
@@ -1941,16 +1941,16 @@ async function generatePoster(r) {
   ctx.fillStyle = 'rgba(176,170,200,.8)';
   dimKeys.forEach((k,i) => {
     const a = Math.PI*2*i/NN - Math.PI/2;
-    const lx = RC.x+Math.cos(a)*(RC.r+28), ly = RC.y+Math.sin(a)*(RC.r+28);
+    const lx = RC.x+Math.cos(a)*(RC.r+30), ly = RC.y+Math.sin(a)*(RC.r+30);
     ctx.fillText(DIMS[k], lx, ly);
   });
   ctx.restore();
 
   // ══════════════════════════════
-  //  § 6  人格摘要卡片 (y=782~890)
-  //  雷达底标签: 622+105+28=755 → 卡片顶 782 → 间距 27px ✓
+  //  § 6  人格摘要卡片
+  //  雷达底标签: 668+108+30=806 → 卡片顶 836 → 间距 30px ✓
   // ══════════════════════════════
-  const QY = 784;
+  const QY = 836;
   ctx.save();
   roundRect(36, QY, W-72, 108, 14);
   ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.fill();
@@ -1963,10 +1963,10 @@ async function generatePoster(r) {
   ctx.restore();
 
   // ══════════════════════════════
-  //  § 7  底部分割线 + 页脚 (y=916~1060)
-  //  左侧: CTA 文字 + URL   右侧: 二维码 90×90
+  //  § 7  底部分割线 + 页脚
+  //  卡片底: 836+108=944 → 分割线 974 → 间距 30px ✓
   // ══════════════════════════════
-  const FOOT_Y = 916;
+  const FOOT_Y = 974;
   ctx.save();
   ctx.strokeStyle = hGrad(60,W-60, 0,'transparent', 0.3,'rgba(168,85,247,.4)', 0.7,'rgba(236,72,153,.4)', 1,'transparent');
   ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(60,FOOT_Y); ctx.lineTo(W-60,FOOT_Y); ctx.stroke();
