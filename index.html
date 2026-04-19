@@ -1533,12 +1533,14 @@ $('btnChallenge').onclick = ()=>{
 
 /* 分享海报 */
 $('btnShareImage').onclick = async ()=>{
-  const r = state.lastResult; if(!r) return;
+  const r = state.lastResult;
+  if(!r){ alert('DEBUG: state.lastResult 未设置，请先完成测评再点生成海报'); return; }
   $('shareModal').classList.remove('hidden');
   $('shareImg').style.display = 'none';
   $('shareImgLoading').style.display = 'block';
+  $('shareImgLoading').textContent = '生成中...';
   $('shareModalTip').style.display = 'none';
-  $('btnDownloadImg').removeAttribute('href');
+  if($('btnDownloadImg')) $('btnDownloadImg').removeAttribute('href');
   try {
     const dataURL = await generatePoster(r);
     $('shareImg').src = dataURL;
@@ -1548,7 +1550,8 @@ $('btnShareImage').onclick = async ()=>{
     $('btnDownloadImg').href = dataURL;
     $('btnDownloadImg').download = `AIBTI-${r.p.name}.png`;
   } catch(e){
-    $('shareImgLoading').textContent = '生成失败，请截图保存';
+    console.error('generatePoster error:', e);
+    $('shareImgLoading').textContent = '生成失败: ' + e.message;
   }
 };
 $('btnCloseShare').onclick = ()=> $('shareModal').classList.add('hidden');
