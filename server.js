@@ -21,7 +21,54 @@ const crypto = require('crypto');
 
 const PORT      = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'aibti-data.json');
-const ADMIN_PWD = process.env.ADMIN_PWD || 'aibti2025'; // 改成你自己的密码
+const ADMIN_PWD = process.env.ADMIN_PWD || 'aibti2025';
+
+// GitHub Issues 统计 token（从环境变量或本地文件读取，不写进代码）
+const GH_TOKEN = process.env.GH_STATS_TOKEN ||
+  (() => { try { return fs.readFileSync(path.join(process.env.HOME||'~', '.aibti_stats_token'), 'utf8').trim(); } catch(e) { return ''; } })();
+const GH_REPO  = 'busilb/aibti';
+const DIMS_MAP = { PROMPT:'提示工程', TOOLS:'工具广度', SCENE:'场景洞察', TRUTH:'幻觉警觉', FLOW:'流程融合', FAITH:'AI 信仰' };
+
+/* ── GitHub Issues 创建 ── */
+async function createGHIssue(record) {
+  if (!GH_TOKEN) return null;
+  const https = require('https');
+  const dimStr = Object.entries(DIMS_MAP)
+    .map(([k, n]) => `${n}:${record.scores[k] || 0}`).join(' / ');
+  const body = [
+    `**等级**：${record.level}`,
+    `**人格**：${record.personaName}（${record.personaCode}）`,
+    `**职能**：${record.role}`,
+    `**六维**：${dimStr}`,
+    `**时间**：${new Date(record.ts).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`,
+    '', '_匿名提交_'
+  ].join('\n');
+  const payload = JSON.stringify({
+    title: `[AIBTI] ${record.role} · ${record.level} · ${record.personaName}`,
+    body,
+    labels: [record.level, record.role, 'stats'].filter(Boolean)
+  });
+  return new Promise(resolve => {
+    const req = https.request({
+      hostname: 'api.github.com',
+      path: `/repos/${GH_REPO}/issues`,
+      method: 'POST',
+      headers: {
+        'Authorization': `token ${GH_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github+json',
+        'User-Agent': 'aibti-server'
+      }
+    }, res => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { resolve(null); } });
+    });
+    req.on('error', () => resolve(null));
+    req.write(payload);
+    req.end();
+  });
+}
 
 /* ── 数据读写 ── */
 function loadData() {
@@ -202,6 +249,10 @@ const server = http.createServer(async (req, res) => {
     data.results.push(record);
     saveData(data);
     const stats = calcStats(data.results);
+    // 异步创建 GitHub Issue（不阻塞响应）
+    createGHIssue(record).then(issue => {
+      if (issue && issue.number) console.log(`[GH Issue] #${issue.number} ${record.level} ${record.personaName}`);
+    });
     return json(res, { ok: true, total: stats.total });
   }
 

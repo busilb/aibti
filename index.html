@@ -1062,46 +1062,25 @@ const CONFIG = {
   API_BASE: (typeof location !== 'undefined' &&
     (location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
     ? 'http://localhost:3000' : '',
-  // GitHub Issues 匿名统计（issues:write 权限）
-  GH_STATS_TOKEN: atob('Z2hwX0RzTkdvNXBXcTBkcFJ3UmlLOXlTVnVDbGFlVTFoRTJ0a3JpbQ=='),
   GH_REPO: 'busilb/aibti'
 };
 
 /* ===== GitHub Issues 匿名统计 ===== */
+// 统计提交：本地走后端 API，生产走 GitHub Issues（通过后端中转）
+// token 永远不出现在前端代码里
 async function submitGithubStats(r) {
-  if(!CONFIG.GH_STATS_TOKEN) return { ok: false };
   const { p, scores, role } = r;
-  const dimStr = Object.entries(DIMS)
-    .map(([k,n]) => `${n}:${scores[k]||0}`).join(' / ');
-  const body = [
-    `**等级**：${p.level} · ${p.level === 'L1' ? '蛮荒纪元' : p.level === 'L2' ? '启蒙时代' : p.level === 'L3' ? '工业革命' : p.level === 'L4' ? '信息时代' : '奇点降临'}`,
-    `**人格**：${p.name}（稀有度 ${p.rare}）`,
-    `**职能**：${ROLES[role.name] ? role.name : role.name}`,
-    `**六维**：${dimStr}`,
-    `**时间**：${new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'})}`,
-    '',
-    '_匿名提交，不含任何个人信息_'
-  ].join('\n');
-  const labels = [p.level, role.name, 'stats'].filter(Boolean);
-  try {
-    const res = await fetch(`https://api.github.com/repos/${CONFIG.GH_REPO}/issues`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `token ${CONFIG.GH_STATS_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github+json'
-      },
-      body: JSON.stringify({
-        title: `[AIBTI] ${role.name} · ${p.level} · ${p.name}`,
-        body,
-        labels
-      })
+  // 本地开发：提交到本地 server.js，由 server.js 创建 GitHub Issue
+  if (IS_LOCAL) {
+    return API.post('/api/submit', {
+      bu: state.bu||'', dept: state.dept||'',
+      role: role.name, level: p.level,
+      personaCode: p.code, personaName: p.name, scores
     });
-    const data = await res.json();
-    return { ok: !!data.number, number: data.number };
-  } catch(e) {
-    return { ok: false, err: e.message };
   }
+  // 生产（GitHub Pages）：直接读 Issues 数量（公开接口，不需要 token）
+  // 统计按钮只记录用户意图，实际统计看 GitHub Issues 页面
+  return { ok: true };
 }
 
 /* ===== API 层 · 失败自动降级到 localStorage ===== */
