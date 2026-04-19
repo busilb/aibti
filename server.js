@@ -101,6 +101,7 @@ async function fetchIssueHistory(n = 100) {
     const isTest = labels.includes('test'); // 打了 test 标签 = 测试数据
     const cityStr = get('城市');
     const [city, region] = cityStr.split('·').map(s => s?.trim() || '');
+    const ipInfo = get('IP归属'); // 脱敏 IP，如 "118.190.123.***"
     const personaRaw = get('人格');
     const personaName = personaRaw.replace(/（.*）/, '').trim();
     const personaCode = (personaRaw.match(/（(.+?)）/) || [])[1] || '';
@@ -114,7 +115,7 @@ async function fetchIssueHistory(n = 100) {
       const cst = new Date(d.getTime() + 8 * 3600000);
       return cst.toISOString().replace('Z', '+08:00');
     })() : '';
-    return { ts: tsLocal, tsIso, level: lv, personaName, personaCode, role, city: city||'', region: region||'', isTest };
+    return { ts: tsLocal, tsIso, level: lv, personaName, personaCode, role, city: city||'', region: region||'', isTest, ip: ipInfo||'' };
   });
   _cache = { ts: Date.now(), stats: _cache.stats, history: result };
   return result;
@@ -143,11 +144,13 @@ async function createGHIssue(record) {
   const dimStr = Object.entries(DIMS_MAP)
     .map(([k, n]) => `${n}:${record.scores[k] || 0}`).join(' / ');
   const cityStr = record.city ? `${record.city}·${record.region||''}` : '未知';
+  const ipStr = record.ip ? record.ip.split('.').slice(0,3).join('.') + '.***' : '未知'; // IP 脱敏：只保留前三段
   const body = [
     `**等级**：${record.level}`,
     `**人格**：${record.personaName}（${record.personaCode}）`,
     `**职能**：${record.role}`,
     `**城市**：${cityStr}`,
+    `**IP归属**：${ipStr}`,
     `**六维**：${dimStr}`,
     `**时间**：${new Date(record.ts).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`,
     '', '_匿名提交_'
@@ -434,10 +437,11 @@ function renderHistory(records) {
     const lv = r.level ? '<span class="badge ' + r.level + '">' + r.level + '</span>' : '-';
     const loc = r.city ? r.city + (r.region ? ' · ' + r.region : '') : '-';
     const src = r.isTest ? '<span class="b-test">测试</span>' : '<span class="b-real">真实</span>';
-    return '<tr><td>' + (r.ts||'-') + '</td><td>' + (r.role||'-') + '</td><td>' + lv + '</td><td>' + (r.personaName||'-') + '</td><td>' + loc + '</td><td>' + src + '</td></tr>';
+    const ipDisplay = r.ip || '-';
+    return '<tr><td>' + (r.ts||'-') + '</td><td>' + (r.role||'-') + '</td><td>' + lv + '</td><td>' + (r.personaName||'-') + '</td><td>' + loc + '</td><td>' + ipDisplay + '</td><td>' + src + '</td></tr>';
   }).join('');
   document.getElementById('historyTable').innerHTML =
-    '<tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th><th>城市·省份</th><th>类型</th></tr>' +
+    '<tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th><th>城市·省份</th><th>IP归属</th><th>类型</th></tr>' +
     (rows || '<tr><td colspan="6" class="loading">暂无数据</td></tr>');
 }
 
@@ -790,10 +794,15 @@ const server = http.createServer(async (req, res) => {
     data.results.push(record);
     saveData(data);
     const stats = calcStats(data.results);
-    createGHIssue(record).then(issue => {
-      if (issue && issue.number) console.log(`[GH Issue] #${issue.number} ${record.level} ${record.personaName} @${cityInfo.city}`);
-    });
-    return json(res, { ok: true, total: stats.total });
+    // await Issue 创建，确保 FC 函数退出前 GitHub 请求已完成
+    const issue = await createGHIssue(record);
+    const issueNum = issue && issue.number ? issue.number : null;
+    if (issueNum) {
+      console.log(`[GH Issue] #${issueNum} ${record.level} ${record.personaName} @${cityInfo.city} [${record.ip}]`);
+    } else {
+      console.log(`[GH Issue] 创建失败: ${JSON.stringify(issue)}`);
+    }
+    return json(res, { ok: true, total: stats.total, issue: issueNum });
   }
 
   // GET /api/stats - 聚合统计（优先从 GitHub Issues，跨重启持久）

@@ -210,11 +210,12 @@ function renderHistory(records) {
     const lv = r.level?'<span class="badge '+r.level+'">'+r.level+'</span>':'-';
     const loc = r.city?(r.city+(r.region?' · '+r.region:''))  :'-';
     const src = r.isTest?'<span class="b-test">测试</span>':'<span class="b-real">真实</span>';
-    return '<tr><td>'+(r.ts||'-')+'</td><td>'+(r.role||'-')+'</td><td>'+lv+'</td><td>'+(r.personaName||'-')+'</td><td>'+loc+'</td><td>'+src+'</td></tr>';
+    const ip = r.ip||'-';
+    return '<tr><td>'+(r.ts||'-')+'</td><td>'+(r.role||'-')+'</td><td>'+lv+'</td><td>'+(r.personaName||'-')+'</td><td>'+loc+'</td><td>'+ip+'</td><td>'+src+'</td></tr>';
   }).join('');
   document.getElementById('historyTable').innerHTML =
-    '<tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th><th>城市·省份</th><th>类型</th></tr>'+
-    (rows||'<tr><td colspan="6" class="loading">暂无数据</td></tr>');
+    '<tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th><th>城市·省份</th><th>IP归属</th><th>类型</th></tr>'+
+    (rows||'<tr><td colspan="7" class="loading">暂无数据</td></tr>');
 }
 
 // ── 图表 ──

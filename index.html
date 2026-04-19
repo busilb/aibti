@@ -1645,23 +1645,20 @@ async function generatePoster(r) {
     ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
   });
 
-  // 头像图片（圆形裁剪）
+  // 头像：渐变彩色圆（跳过跨域图片加载，避免 canvas tainted SecurityError）
   ctx.save();
   ctx.beginPath(); ctx.arc(AC.x, AC.y, AC.r, 0, Math.PI*2); ctx.clip();
-  try {
-    const img = await new Promise((res, rej) => {
-      const i = new Image(); i.crossOrigin = 'anonymous';
-      i.onload = () => res(i); i.onerror = rej;
-      i.src = `${IMG_BASE}/${p.code}.png`;
-    });
-    ctx.drawImage(img, AC.x-AC.r, AC.y-AC.r, AC.r*2, AC.r*2);
-  } catch {
-    const fb = ctx.createRadialGradient(AC.x, AC.y, 0, AC.x, AC.y, AC.r);
-    fb.addColorStop(0, lv.color + 'dd'); fb.addColorStop(1, '#1a0a2e');
-    ctx.fillStyle = fb; ctx.fill();
-    ctx.font = `800 52px ${MONO}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillText(p.level, AC.x, AC.y);
-  }
+  const fb = ctx.createRadialGradient(AC.x, AC.y - AC.r*0.3, AC.r*0.1, AC.x, AC.y, AC.r);
+  fb.addColorStop(0, lv.color + 'ff');
+  fb.addColorStop(0.6, lv.color + 'aa');
+  fb.addColorStop(1, '#1a0a2e');
+  ctx.fillStyle = fb;
+  ctx.fillRect(AC.x-AC.r, AC.y-AC.r, AC.r*2, AC.r*2);
+  // 在圆形上写人格名（大字）
+  const nameSize = p.name.length <= 3 ? 52 : p.name.length <= 5 ? 40 : 32;
+  ctx.font = `800 ${nameSize}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=8;
+  ctx.fillText(p.name, AC.x, AC.y);
   ctx.restore();
 
   // 等级徽章（右下角圆点）
