@@ -143,75 +143,175 @@ function adminCheck(req, res) {
 
 /* ── 管理员 HTML 看板 ── */
 function adminHTML(stats, results) {
-  const byLevelRows = Object.entries(stats.byLevel)
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([lv, cnt]) => `<tr><td>${lv}</td><td>${cnt}</td><td>${(cnt/stats.total*100).toFixed(1)}%</td></tr>`)
-    .join('');
+  // 最近 48 小时每小时趋势（基于提交记录的 ts 字段）
+  const now = Date.now();
+  const hourBuckets = {};
+  for (let i = 47; i >= 0; i--) {
+    const d = new Date(now - i * 3600000);
+    const key = d.toISOString().slice(0, 13); // "2026-04-19T10"
+    const label = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:00`;
+    hourBuckets[key] = { label, count: 0 };
+  }
+  results.forEach(r => {
+    const key = (r.ts || '').slice(0, 13);
+    if (hourBuckets[key]) hourBuckets[key].count++;
+  });
+  const trendLabels = JSON.stringify(Object.values(hourBuckets).map(b => b.label));
+  const trendData   = JSON.stringify(Object.values(hourBuckets).map(b => b.count));
 
-  const byBURows = Object.entries(stats.byBU)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 15)
-    .map(([bu, cnt]) => `<tr><td>${bu}</td><td>${cnt}</td></tr>`)
-    .join('');
+  // 等级饼图
+  const lvOrder = ['L1','L2','L3','L4','L5'];
+  const lvColors = ['#6b7280','#3b82f6','#10b981','#8b5cf6','#f59e0b'];
+  const lvLabels = JSON.stringify(lvOrder.map(l => l + ' ' + ({L1:'蛮荒',L2:'启蒙',L3:'工业',L4:'信息',L5:'奇点'}[l]||'')));
+  const lvData   = JSON.stringify(lvOrder.map(l => stats.byLevel[l] || 0));
+  const lvColors_= JSON.stringify(lvColors);
 
-  const byPersonaRows = Object.entries(stats.byPersona)
-    .sort((a, b) => b[1] - a[1])
-    .map(([code, cnt]) => `<tr><td>${code}</td><td>${cnt}</td><td>${(cnt/stats.total*100).toFixed(1)}%</td></tr>`)
-    .join('');
+  // 人格饼图（取前 10）
+  const personaEntries = Object.entries(stats.byPersona).sort((a,b) => b[1]-a[1]).slice(0, 10);
+  const pColors = ['#a855f7','#ec4899','#06b6d4','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6','#f97316','#14b8a6'];
+  const pLabels = JSON.stringify(personaEntries.map(([k]) => k));
+  const pData   = JSON.stringify(personaEntries.map(([,v]) => v));
+  const pColors_= JSON.stringify(pColors.slice(0, personaEntries.length));
 
+  // 最近 20 条记录表格
   const recentRows = results.slice(-20).reverse()
-    .map(r => `<tr><td>${r.ts?.slice(0,16)||''}</td><td>${r.bu}</td><td>${r.dept}</td><td>${r.role}</td><td>${r.level}</td><td>${r.personaName}</td></tr>`)
-    .join('');
+    .map(r => {
+      const ts = r.ts ? new Date(r.ts).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}).replace(/\//g,'-') : '';
+      return `<tr><td>${ts}</td><td>${r.role||'-'}</td><td>${r.level||'-'}</td><td>${r.personaName||'-'}</td></tr>`;
+    }).join('');
 
   return `<!DOCTYPE html>
 <html lang="zh">
-<head><meta charset="UTF-8"><title>AIBTI 后台看板</title>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIBTI 数据看板</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;background:#0a0a0f;color:#f0f0f5;margin:0;padding:20px}
-h1{font-size:22px;color:#d4a574;margin-bottom:4px}
-.sub{font-size:12px;color:#71717a;margin-bottom:24px}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
-.card{background:#11131a;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px}
-.card .num{font-size:32px;font-weight:800;color:#d4a574}
-.card .label{font-size:12px;color:#8a8e9a;margin-top:4px}
-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px}
-th{text-align:left;color:#8a8e9a;font-size:11px;letter-spacing:.1em;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.07)}
-td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);color:#e4e4e7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"PingFang SC",sans-serif;background:#08090c;color:#f0f0f5;padding:20px;min-height:100vh}
+.header{margin-bottom:24px}
+h1{font-size:22px;font-weight:800;background:linear-gradient(135deg,#a855f7,#ec4899,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sub{font-size:12px;color:#52525b;margin-top:4px}
+.sub a{color:#a855f7;text-decoration:none}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:600px){.cards{grid-template-columns:repeat(2,1fr)}}
+.card{background:#11131a;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px}
+.card .num{font-size:36px;font-weight:900;color:#d4a574;line-height:1}
+.card .lbl{font-size:11px;color:#8a8e9a;margin-top:6px;letter-spacing:.05em}
+.sec{background:#11131a;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px;margin-bottom:14px}
+.sec h2{font-size:12px;letter-spacing:.2em;color:#8a8e9a;font-weight:700;text-transform:uppercase;margin-bottom:16px}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
+.chart-wrap{position:relative;height:260px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:#6b7280;font-size:11px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.06)}
+td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);color:#d4d4d8}
 tr:hover td{background:rgba(255,255,255,.03)}
-h2{font-size:14px;color:#d4a574;margin:24px 0 8px;letter-spacing:.05em}
-.sec{background:#11131a;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;margin-bottom:16px;overflow-x:auto}
-a{color:#d4a574}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;color:#fff}
+.L1{background:#6b7280}.L2{background:#3b82f6}.L3{background:#10b981}.L4{background:#8b5cf6}.L5{background:#f59e0b}
 </style>
 </head>
 <body>
-<h1>AIBTI 后台看板</h1>
-<div class="sub">刷新页面获取最新数据 · <a href="?password=${ADMIN_PWD}&export=1">导出 JSON</a></div>
+<div class="header">
+  <h1>AIBTI 数据看板</h1>
+  <p class="sub">实时刷新 · <a href="?password=${ADMIN_PWD}&export=1">导出 JSON</a> · 数据来源：GitHub Issues</p>
+</div>
 
 <div class="cards">
-  <div class="card"><div class="num">${stats.total}</div><div class="label">总测评人次</div></div>
-  <div class="card"><div class="num">${stats.ogPct}</div><div class="label">老虾农占比</div></div>
-  <div class="card"><div class="num">${Object.keys(stats.byBU).length}</div><div class="label">已覆盖 BU 数</div></div>
+  <div class="card"><div class="num">${stats.total}</div><div class="lbl">总测评人次</div></div>
+  <div class="card"><div class="num">${stats.ogPct}</div><div class="lbl">老虾农占比</div></div>
+  <div class="card"><div class="num">${Object.keys(stats.byRole||{}).length}</div><div class="lbl">覆盖职能数</div></div>
 </div>
 
 <div class="sec">
-  <h2>等级分布</h2>
-  <table><tr><th>等级</th><th>人数</th><th>占比</th></tr>${byLevelRows}</table>
+  <h2>每小时测评趋势（近 48 小时）</h2>
+  <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
 </div>
 
-<div class="sec">
-  <h2>人格分布（TOP 15）</h2>
-  <table><tr><th>人格</th><th>人数</th><th>占比</th></tr>${byPersonaRows}</table>
-</div>
-
-<div class="sec">
-  <h2>BU 分布（TOP 15）</h2>
-  <table><tr><th>BU</th><th>人数</th></tr>${byBURows}</table>
+<div class="charts-row">
+  <div class="sec">
+    <h2>段位分布</h2>
+    <div class="chart-wrap"><canvas id="lvChart"></canvas></div>
+  </div>
+  <div class="sec">
+    <h2>人格分布 Top 10</h2>
+    <div class="chart-wrap"><canvas id="pChart"></canvas></div>
+  </div>
 </div>
 
 <div class="sec">
   <h2>最近 20 条记录</h2>
-  <table><tr><th>时间</th><th>BU</th><th>部门</th><th>职能</th><th>等级</th><th>人格</th></tr>${recentRows}</table>
+  <table>
+    <tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th></tr>
+    ${recentRows}
+  </table>
 </div>
+
+<script>
+const C = { text:'rgba(255,255,255,.7)', grid:'rgba(255,255,255,.06)', tick:'rgba(255,255,255,.5)' };
+
+// 趋势柱状图
+new Chart(document.getElementById('trendChart'), {
+  type: 'bar',
+  data: {
+    labels: ${trendLabels},
+    datasets: [{
+      label: '测评次数',
+      data: ${trendData},
+      backgroundColor: 'rgba(168,85,247,.6)',
+      borderColor: '#a855f7',
+      borderWidth: 1,
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: { color: C.tick, maxTicksLimit: 12, font: { size: 10 } },
+        grid: { color: C.grid }
+      },
+      y: {
+        ticks: { color: C.tick, stepSize: 1 },
+        grid: { color: C.grid },
+        beginAtZero: true
+      }
+    }
+  }
+});
+
+// 等级饼图
+new Chart(document.getElementById('lvChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ${lvLabels},
+    datasets: [{ data: ${lvData}, backgroundColor: ${lvColors_}, borderWidth: 0 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { color: C.text, padding: 12, font: { size: 12 } } }
+    }
+  }
+});
+
+// 人格饼图
+new Chart(document.getElementById('pChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ${pLabels},
+    datasets: [{ data: ${pData}, backgroundColor: ${pColors_}, borderWidth: 0 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { color: C.text, padding: 8, font: { size: 11 }, boxWidth: 12 } }
+    }
+  }
+});
+</script>
 </body>
 </html>`;
 }
