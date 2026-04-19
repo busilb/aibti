@@ -1466,7 +1466,8 @@ function renderResult(){
     level:  p.level,
     personaCode: p.code,
     personaName: p.name,
-    scores: scores
+    scores: scores,
+    source: 'web'
   }).then(res => {
     // 提交成功后更新 proof 计数
     if(res && res.total) $('proofN').textContent = res.total.toLocaleString();

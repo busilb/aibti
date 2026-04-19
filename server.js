@@ -86,8 +86,9 @@ async function fetchIssueHistory(n = 100) {
     const body = issue.body || '';
     const get = key => { const m = body.match(new RegExp(`\\*\\*${key}\\*\\*[：:]([^\n]+)`)); return m ? m[1].trim() : ''; };
     const labels = (issue.labels || []).map(l => l.name);
-    const lv   = labels.find(l => /^L[1-5]$/.test(l)) || '';
-    const role = labels.find(l => ['OPS','PD','DEV','BD'].includes(l)) || get('职能');
+    const lv     = labels.find(l => /^L[1-5]$/.test(l)) || '';
+    const role   = labels.find(l => ['OPS','PD','DEV','BD'].includes(l)) || get('职能');
+    const isTest = labels.includes('test'); // 打了 test 标签 = 测试数据
     const cityStr = get('城市');
     const [city, region] = cityStr.split('·').map(s => s?.trim() || '');
     const personaRaw = get('人格');
@@ -103,7 +104,7 @@ async function fetchIssueHistory(n = 100) {
       const cst = new Date(d.getTime() + 8 * 3600000);
       return cst.toISOString().replace('Z', '+08:00');
     })() : '';
-    return { ts: tsLocal, tsIso, level: lv, personaName, personaCode, role, city: city||'', region: region||'' };
+    return { ts: tsLocal, tsIso, level: lv, personaName, personaCode, role, city: city||'', region: region||'', isTest };
   });
 }
 
@@ -139,10 +140,13 @@ async function createGHIssue(record) {
     `**时间**：${new Date(record.ts).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`,
     '', '_匿名提交_'
   ].join('\n');
+  // source='web' = 真实用户；无 source 或其他值 = 测试
+  const isReal = record.source === 'web';
+  const labels = [record.level, record.role, 'stats', isReal ? null : 'test'].filter(Boolean);
   return ghRequest(`/repos/${GH_REPO}/issues`, 'POST', {
     title: `[AIBTI] ${record.role} · ${record.level} · ${record.personaName}`,
     body,
-    labels: [record.level, record.role, 'stats'].filter(Boolean)
+    labels
   });
 }
 
@@ -222,13 +226,15 @@ function adminCheck(req, res) {
 
 /* ── 管理员 HTML 看板 ── */
 function adminHTML(stats, results) {
-  // 最近 48 小时每小时趋势（北京时间，key 格式 "2026-04-19T19"）
+  // 趋势图：从上线时间 2026-04-19 00:00 北京时间起，到当前每小时
+  const LAUNCH_CST = new Date('2026-04-18T16:00:00Z'); // 4月19日00:00北京 = UTC+8
   const now = Date.now();
+  const totalHours = Math.ceil((now - LAUNCH_CST.getTime()) / 3600000) + 1;
   const hourBuckets = {};
-  for (let i = 47; i >= 0; i--) {
+  for (let i = totalHours - 1; i >= 0; i--) {
     const utc = new Date(now - i * 3600000);
     const cst = new Date(utc.getTime() + 8 * 3600000); // +8 北京时间
-    const key = cst.toISOString().slice(0, 13);         // "2026-04-19T19"（北京时间时）
+    const key = cst.toISOString().slice(0, 13);
     const label = `${String(cst.getUTCMonth()+1).padStart(2,'0')}/${String(cst.getUTCDate()).padStart(2,'0')} ${String(cst.getUTCHours()).padStart(2,'0')}:00`;
     hourBuckets[key] = { label, count: 0 };
   }
@@ -268,7 +274,10 @@ function adminHTML(stats, results) {
       const ts = r.ts || '-';
       const loc = r.city ? `${r.city}${r.region ? ' · '+r.region : ''}` : '-';
       const lvBadge = r.level ? `<span class="badge ${r.level}">${r.level}</span>` : '-';
-      return `<tr><td>${ts}</td><td>${r.role||'-'}</td><td>${lvBadge}</td><td>${r.personaName||'-'}</td><td>${loc}</td></tr>`;
+      const srcBadge = r.isTest
+        ? `<span style="font-size:10px;background:rgba(107,114,128,.25);color:#9ca3af;padding:1px 6px;border-radius:99px;">测试</span>`
+        : `<span style="font-size:10px;background:rgba(16,185,129,.2);color:#34d399;padding:1px 6px;border-radius:99px;">真实</span>`;
+      return `<tr><td>${ts}</td><td>${r.role||'-'}</td><td>${lvBadge}</td><td>${r.personaName||'-'}</td><td>${loc}</td><td>${srcBadge}</td></tr>`;
     }).join('');
 
   return `<!DOCTYPE html>
@@ -316,7 +325,7 @@ tr:hover td{background:rgba(255,255,255,.03)}
 </div>
 
 <div class="sec">
-  <h2>每小时测评趋势（近 48 小时）</h2>
+  <h2>每小时测评趋势（上线至今 · 2026/04/19 00:00 起）</h2>
   <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
 </div>
 
@@ -341,7 +350,7 @@ ${hasCityData ? `
 <div class="sec">
   <h2>提交人明细（全量历史，最多 100 条 · 来源 GitHub Issues）</h2>
   <table>
-    <tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th><th>城市 · 省份</th></tr>
+    <tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th><th>城市 · 省份</th><th>类型</th></tr>
     ${recentRows || '<tr><td colspan="5" style="text-align:center;color:#52525b;padding:20px">暂无数据</td></tr>'}
   </table>
 </div>
@@ -478,7 +487,8 @@ const server = http.createServer(async (req, res) => {
       level:       String(body.level       || '').slice(0, 5),
       personaCode: String(body.personaCode || '').slice(0, 20),
       personaName: String(body.personaName || '').slice(0, 20),
-      scores: body.scores || {}
+      scores: body.scores || {},
+      source: body.source === 'web' ? 'web' : 'test' // web=真实用户，test=调试
     };
     data.results.push(record);
     saveData(data);
