@@ -75,9 +75,14 @@ function ghRequest(path, method = 'GET', payload = null) {
   });
 }
 
+/* ── 服务端内存缓存（60s TTL，减少 GitHub API 调用频率）── */
+let _cache = { ts: 0, stats: null, history: null };
+function cacheValid() { return Date.now() - _cache.ts < 60000; }
+
 /* ── 从 GitHub Issues 拉取所有历史记录（最多 n 条） ── */
 async function fetchIssueHistory(n = 100) {
   if (!GH_TOKEN) return [];
+  if (cacheValid() && _cache.history) return _cache.history;
   const issues = await ghRequest(
     `/repos/${GH_REPO}/issues?labels=stats&state=open&per_page=${n}&sort=created&direction=desc`
   );
@@ -106,6 +111,8 @@ async function fetchIssueHistory(n = 100) {
     })() : '';
     return { ts: tsLocal, tsIso, level: lv, personaName, personaCode, role, city: city||'', region: region||'', isTest };
   });
+  _cache = { ts: Date.now(), stats: _cache.stats, history: result };
+  return result;
 }
 
 /* ── 从 GitHub Issues 聚合统计（跨重启持久） ── */
@@ -338,25 +345,63 @@ function buildFilteredStats(records) {
 
 function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
 
+// 带超时的 fetch（默认 25s）
+function fetchWithTimeout(url, ms=25000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { signal: ctrl.signal })
+    .then(r => r.json())
+    .finally(() => clearTimeout(t));
+}
+
 async function loadData() {
   clearInterval(timer);
   countdownVal = 30;
+  document.getElementById('lastUpdate').textContent = '加载中...';
+
+  // stats 和 history 分开请求，互不影响
+  let statsOk = false, histOk = false;
+
+  // 1. 先拉 stats（快，不依赖 GitHub，降级到本地）
   try {
-    const [statsRes, histRes] = await Promise.all([
-      fetch(API + '/api/stats').then(r=>r.json()),
-      fetch(API + '/api/history?password=' + PWD).then(r=>r.json())
-    ]);
-    allRecords = histRes.records || [];
-    allStats   = statsRes;
-    const hideTest = document.getElementById('hideTest').checked;
-    const filtered = hideTest ? allRecords.filter(r => !r.isTest) : allRecords;
-    renderStats(buildFilteredStats(filtered));
-    renderHistory(filtered);
-    renderCharts(buildFilteredStats(filtered), filtered);
-    document.getElementById('lastUpdate').textContent = '更新时间：' + new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false});
+    const statsRes = await fetchWithTimeout(API + '/api/stats', 20000);
+    allStats = statsRes;
+    statsOk = true;
+    // 如果已有 records 则用已有数据先渲染
+    if (allRecords.length > 0) {
+      const hideTest = document.getElementById('hideTest').checked;
+      const filtered = hideTest ? allRecords.filter(r=>!r.isTest) : allRecords;
+      renderStats(buildFilteredStats(filtered));
+      renderCharts(buildFilteredStats(filtered), filtered);
+    } else {
+      renderStats(statsRes);
+    }
   } catch(e) {
-    document.getElementById('lastUpdate').innerHTML = '<span class="error">加载失败，请刷新</span>';
+    document.getElementById('cTotal').textContent = '?';
+    document.getElementById('cOg').textContent = '?';
   }
+
+  // 2. 再拉 history（慢，调 GitHub API）
+  try {
+    const histRes = await fetchWithTimeout(API + '/api/history?password=' + PWD, 25000);
+    allRecords = histRes.records || [];
+    histOk = true;
+    const hideTest = document.getElementById('hideTest').checked;
+    const filtered = hideTest ? allRecords.filter(r=>!r.isTest) : allRecords;
+    const s = buildFilteredStats(filtered);
+    renderStats(s);
+    renderHistory(filtered);
+    renderCharts(s, filtered);
+  } catch(e) {
+    // history 失败只显示警告，不影响已渲染的 stats/charts
+    if (allRecords.length === 0) {
+      renderHistory([]);
+      document.getElementById('historyTitle').textContent += '（GitHub 响应慢，请稍候刷新）';
+    }
+  }
+
+  const status = statsOk && histOk ? '更新时间：' : (statsOk ? '统计已更新，明细加载中...' : '部分加载失败，');
+  document.getElementById('lastUpdate').textContent = status + new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false});
   startCountdown();
 }
 
