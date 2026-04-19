@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIBTI 数据看板</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"PingFang SC",sans-serif;background:#08090c;color:#f0f0f5;padding:16px;min-height:100vh}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+h1{font-size:22px;font-weight:800;background:linear-gradient(135deg,#a855f7,#ec4899,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.meta{font-size:12px;color:#52525b;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.meta a{color:#a855f7;text-decoration:none}
+.btn{background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.3);color:#a855f7;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit}
+.btn:hover{background:rgba(168,85,247,.25)}
+.countdown{color:#52525b;font-size:11px;min-width:70px}
+/* 密码框 */
+.pwd-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;gap:16px}
+.pwd-wrap h2{font-size:18px;color:#d4a574}
+.pwd-input{background:rgba(255,255,255,.07);border:1px solid rgba(168,85,247,.4);border-radius:12px;padding:12px 16px;color:#f0f0f5;font-size:15px;width:260px;outline:none;font-family:inherit}
+.pwd-input:focus{border-color:#a855f7}
+.pwd-btn{background:linear-gradient(135deg,#a855f7,#ec4899);color:#fff;border:none;border-radius:12px;padding:12px 28px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.pwd-hint{font-size:12px;color:#ef4444}
+/* 数据卡片 */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:600px){.cards{grid-template-columns:repeat(2,1fr)}}
+.card{background:#11131a;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px}
+.card .num{font-size:34px;font-weight:900;color:#d4a574;line-height:1}
+.card .lbl{font-size:11px;color:#8a8e9a;margin-top:5px;letter-spacing:.05em}
+.sec{background:#11131a;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;margin-bottom:12px}
+.sec h2{font-size:11px;letter-spacing:.2em;color:#8a8e9a;font-weight:700;text-transform:uppercase;margin-bottom:14px}
+.chart-wrap{position:relative;height:220px}
+.pie-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:700px){.pie-row{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;color:#6b7280;font-size:11px;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.06)}
+td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.03);color:#d4d4d8}
+tr:hover td{background:rgba(255,255,255,.02)}
+.badge{display:inline-block;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700;color:#fff}
+.L1{background:#6b7280}.L2{background:#3b82f6}.L3{background:#10b981}.L4{background:#8b5cf6}.L5{background:#f59e0b}
+.b-real{font-size:10px;background:rgba(16,185,129,.2);color:#34d399;padding:1px 6px;border-radius:99px}
+.b-test{font-size:10px;background:rgba(107,114,128,.2);color:#9ca3af;padding:1px 6px;border-radius:99px}
+.loading{text-align:center;padding:40px;color:#52525b}
+#dashboard{display:none}
+</style>
+</head>
+<body>
+
+<!-- 密码输入页 -->
+<div class="pwd-wrap" id="pwdPage">
+  <h2>AIBTI 数据看板</h2>
+  <input class="pwd-input" type="password" id="pwdInput" placeholder="输入管理员密码" onkeydown="if(event.key==='Enter')login()">
+  <button class="pwd-btn" onclick="login()">进入看板</button>
+  <p class="pwd-hint" id="pwdHint"></p>
+</div>
+
+<!-- 看板主体 -->
+<div id="dashboard">
+  <div class="header">
+    <h1>AIBTI 数据看板</h1>
+    <div class="meta">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#d4d4d8">
+        <input type="checkbox" id="hideTest" onchange="applyFilter()" style="width:14px;height:14px;accent-color:#a855f7">
+        仅看真实数据
+      </label>
+      <span id="lastUpdate">加载中...</span>
+      <a id="exportLink" href="#">导出 JSON</a>
+      <button class="btn" onclick="loadData()">立即刷新</button>
+      <span class="countdown" id="countdown"></span>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="num" id="cTotal">-</div><div class="lbl">总测评人次</div></div>
+    <div class="card"><div class="num" id="cReal">-</div><div class="lbl">真实用户</div></div>
+    <div class="card"><div class="num" id="cOg">-</div><div class="lbl">老虾农占比</div></div>
+  </div>
+
+  <div class="sec">
+    <h2>每小时趋势（上线至今 · 2026/04/19 起）</h2>
+    <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <div class="pie-row">
+    <div class="sec"><h2>段位分布</h2><div class="chart-wrap" style="height:200px"><canvas id="lvChart"></canvas></div></div>
+    <div class="sec"><h2>人格分布 Top10</h2><div class="chart-wrap" style="height:200px"><canvas id="pChart"></canvas></div></div>
+  </div>
+
+  <div id="citySection" style="display:none">
+    <div class="sec"><h2>城市分布</h2><div class="chart-wrap" id="cityWrap" style="height:120px"><canvas id="cityChart"></canvas></div></div>
+  </div>
+
+  <div class="sec">
+    <h2 id="historyTitle">提交人明细（加载中...）</h2>
+    <table id="historyTable">
+      <tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th><th>城市·省份</th><th>类型</th></tr>
+      <tr><td colspan="6" class="loading">加载中...</td></tr>
+    </table>
+  </div>
+</div>
+
+<script>
+// FC 后端地址
+const FC_BASE = 'https://aibti-stats-jzrjnptdps.cn-hangzhou.fcapp.run';
+const C = {text:'rgba(255,255,255,.7)',grid:'rgba(255,255,255,.06)',tick:'rgba(255,255,255,.5)'};
+let charts = {}, allRecords = [], timer, countdownVal = 30, PWD = '';
+
+// ── 密码登录 ──
+function login() {
+  const p = document.getElementById('pwdInput').value.trim();
+  if (!p) return;
+  document.getElementById('pwdHint').textContent = '验证中...';
+  fetch(FC_BASE + '/api/stats')
+    .then(r => r.json())
+    .then(d => {
+      if (d.total !== undefined) {
+        // stats 是公开的，用 history 验证密码
+        return fetch(FC_BASE + '/api/history?password=' + encodeURIComponent(p))
+          .then(r => r.json())
+          .then(h => {
+            if (h.records !== undefined) {
+              PWD = p;
+              localStorage.setItem('aibti_pwd', p);
+              document.getElementById('pwdPage').style.display = 'none';
+              document.getElementById('dashboard').style.display = 'block';
+              document.getElementById('exportLink').href = FC_BASE + '/admin?password=' + encodeURIComponent(p) + '&export=1';
+              loadData();
+            } else {
+              document.getElementById('pwdHint').textContent = '密码错误，请重试';
+            }
+          });
+      }
+    })
+    .catch(() => { document.getElementById('pwdHint').textContent = '连接失败，请检查网络'; });
+}
+
+// 自动填上次密码
+window.onload = () => {
+  const saved = localStorage.getItem('aibti_pwd');
+  if (saved) { document.getElementById('pwdInput').value = saved; }
+};
+
+// ── 数据加载 ──
+function fetchT(url, ms=25000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, {signal: ctrl.signal}).then(r=>r.json()).finally(()=>clearTimeout(t));
+}
+
+async function loadData() {
+  clearInterval(timer);
+  document.getElementById('lastUpdate').textContent = '加载中...';
+  let statsOk = false, histOk = false;
+
+  try {
+    const d = await fetchT(FC_BASE + '/api/stats', 15000);
+    renderStats(d); statsOk = true;
+  } catch(e) {
+    document.getElementById('cTotal').textContent = '?';
+    document.getElementById('cOg').textContent = '?';
+  }
+
+  try {
+    const h = await fetchT(FC_BASE + '/api/history?password=' + encodeURIComponent(PWD), 25000);
+    allRecords = h.records || []; histOk = true;
+    applyFilter();
+  } catch(e) {
+    if (!allRecords.length) renderHistory([]);
+    document.getElementById('historyTitle').textContent = '明细加载失败（GitHub 响应慢，请刷新）';
+  }
+
+  document.getElementById('lastUpdate').textContent =
+    (statsOk && histOk ? '更新：' : '部分加载，') +
+    new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false});
+  startCountdown();
+}
+
+function applyFilter() {
+  const hide = document.getElementById('hideTest').checked;
+  const filtered = hide ? allRecords.filter(r=>!r.isTest) : allRecords;
+  const s = buildStats(filtered);
+  renderStats(s);
+  renderHistory(filtered);
+  renderCharts(s, filtered);
+}
+
+function buildStats(records) {
+  const byLevel={},byPersona={},byRole={},byCity={};
+  let og=0;
+  records.forEach(r=>{
+    if(r.level) byLevel[r.level]=(byLevel[r.level]||0)+1;
+    if(r.personaCode) byPersona[r.personaCode]=(byPersona[r.personaCode]||0)+1;
+    if(r.role) byRole[r.role]=(byRole[r.role]||0)+1;
+    if(r.city&&r.city!=='未知') byCity[r.city]=(byCity[r.city]||0)+1;
+    if(r.personaCode==='OG-FARMER') og++;
+  });
+  const t=records.length;
+  return {total:t, ogPct:t>0?(og/t*100).toFixed(1)+'%':'0%', byLevel,byPersona,byRole,byCity};
+}
+
+function renderStats(d) {
+  document.getElementById('cTotal').textContent = d.total??'-';
+  document.getElementById('cOg').textContent = d.ogPct??'-';
+}
+
+function renderHistory(records) {
+  document.getElementById('cReal').textContent = records.filter(r=>!r.isTest).length;
+  document.getElementById('historyTitle').textContent = '提交人明细（最近 '+records.length+' 条）';
+  const rows = records.map(r=>{
+    const lv = r.level?'<span class="badge '+r.level+'">'+r.level+'</span>':'-';
+    const loc = r.city?(r.city+(r.region?' · '+r.region:''))  :'-';
+    const src = r.isTest?'<span class="b-test">测试</span>':'<span class="b-real">真实</span>';
+    return '<tr><td>'+(r.ts||'-')+'</td><td>'+(r.role||'-')+'</td><td>'+lv+'</td><td>'+(r.personaName||'-')+'</td><td>'+loc+'</td><td>'+src+'</td></tr>';
+  }).join('');
+  document.getElementById('historyTable').innerHTML =
+    '<tr><th>时间（北京）</th><th>职能</th><th>等级</th><th>人格</th><th>城市·省份</th><th>类型</th></tr>'+
+    (rows||'<tr><td colspan="6" class="loading">暂无数据</td></tr>');
+}
+
+// ── 图表 ──
+let chartJsReady = typeof Chart !== 'undefined';
+function loadChartJs() {
+  if (chartJsReady) return Promise.resolve();
+  return new Promise(res=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    s.onload=()=>{chartJsReady=true;res();};
+    s.onerror=()=>res();
+    document.head.appendChild(s);
+  });
+}
+function dc(id){try{if(charts[id]){charts[id].destroy();delete charts[id];}}catch(e){}}
+
+async function renderCharts(stats,records){
+  await loadChartJs();
+  if(typeof Chart==='undefined') return;
+  try {
+    const LAUNCH=new Date('2026-04-18T16:00:00Z'),now=Date.now();
+    const totalH=Math.ceil((now-LAUNCH.getTime())/3600000)+1;
+    const buckets={};
+    for(let i=totalH-1;i>=0;i--){
+      const cst=new Date(now-i*3600000+8*3600000);
+      const key=cst.toISOString().slice(0,13);
+      const lbl=(cst.getUTCMonth()+1+'').padStart(2,'0')+'/'+(cst.getUTCDate()+'').padStart(2,'0')+' '+(cst.getUTCHours()+'').padStart(2,'0')+':00';
+      buckets[key]={lbl,count:0};
+    }
+    records.forEach(r=>{const k=(r.tsIso||'').slice(0,13);if(buckets[k])buckets[k].count++;});
+    dc('trend');
+    charts.trend=new Chart(document.getElementById('trendChart'),{
+      type:'bar',
+      data:{labels:Object.values(buckets).map(b=>b.lbl),datasets:[{label:'测评次数',data:Object.values(buckets).map(b=>b.count),backgroundColor:'rgba(168,85,247,.6)',borderColor:'#a855f7',borderWidth:1,borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:C.tick,maxTicksLimit:12,font:{size:10}},grid:{color:C.grid}},y:{ticks:{color:C.tick,stepSize:1},grid:{color:C.grid},beginAtZero:true}}}
+    });
+    const LV=['L1','L2','L3','L4','L5'],LC=['#6b7280','#3b82f6','#10b981','#8b5cf6','#f59e0b'],LN=['L1 蛮荒','L2 启蒙','L3 工业','L4 信息','L5 奇点'];
+    dc('lv');
+    charts.lv=new Chart(document.getElementById('lvChart'),{type:'doughnut',data:{labels:LN,datasets:[{data:LV.map(l=>stats.byLevel[l]||0),backgroundColor:LC,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:C.text,padding:10,font:{size:11}}}}}});
+    const PE=Object.entries(stats.byPersona||{}).sort((a,b)=>b[1]-a[1]).slice(0,10),PC=['#a855f7','#ec4899','#06b6d4','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6','#f97316','#14b8a6'];
+    dc('p');
+    charts.p=new Chart(document.getElementById('pChart'),{type:'doughnut',data:{labels:PE.map(([k])=>k),datasets:[{data:PE.map(([,v])=>v),backgroundColor:PC.slice(0,PE.length),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:C.text,padding:8,font:{size:11},boxWidth:12}}}}});
+    const CE=Object.entries(stats.byCity||{}).filter(([c])=>c&&c!=='未知').sort((a,b)=>b[1]-a[1]).slice(0,10);
+    if(CE.length){
+      document.getElementById('citySection').style.display='block';
+      document.getElementById('cityWrap').style.height=Math.max(100,CE.length*36)+'px';
+      dc('city');
+      charts.city=new Chart(document.getElementById('cityChart'),{type:'bar',data:{labels:CE.map(([c])=>c),datasets:[{data:CE.map(([,v])=>v),backgroundColor:'rgba(6,182,212,.6)',borderColor:'#06b6d4',borderWidth:1,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:C.tick,stepSize:1},grid:{color:C.grid},beginAtZero:true},y:{ticks:{color:C.text,font:{size:13}},grid:{display:false}}}}});
+    }
+  } catch(e) { console.warn('图表渲染:', e.message); }
+}
+
+function startCountdown(){
+  countdownVal=30;
+  timer=setInterval(()=>{
+    countdownVal--;
+    document.getElementById('countdown').textContent=countdownVal+'s 后刷新';
+    if(countdownVal<=0) loadData();
+  },1000);
+}
+</script>
+</body>
+</html>
