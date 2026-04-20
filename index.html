@@ -383,7 +383,7 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 
 /* ── 导航底部 ── */
 .bottom-nav{display:flex;gap:10px;padding:0 20px 22px}
-.bottom-nav .btn{flex:1;font-size:13px}
+.bottom-nav .btn{flex:1;font-size:12px}
 
 /* ── 分享 Modal ── */
 .share-modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.95);backdrop-filter:blur(20px);
@@ -510,13 +510,47 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 /* G-01 share actions 行 */
 .share-actions-row{display:flex;gap:8px;margin-top:8px}
 .share-actions-row .btn{font-size:13px}
+
+/* ── 历史记录入口按钮（欢迎页右上角） ── */
+.hist-entry-btn{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.2);border-radius:50%;width:40px;height:40px;
+  display:flex;align-items:center;justify-content:center;color:#c8b8e8;cursor:pointer;
+  touch-action:manipulation;z-index:10;padding:0}
+.hist-entry-btn.hidden{display:none!important}
+
+/* ── 历史记录页 ── */
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px}
+.top-bar-title{font-size:16px;font-weight:700;color:#e8d5ff}
+.btn-sm{font-size:12px;padding:6px 12px;width:auto;display:inline-block}
+.hist-list{padding:0 16px 80px}
+.hist-card{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:16px;
+  padding:16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;
+  touch-action:manipulation}
+.hist-card:active{opacity:.7}
+.hist-avatar-dot{width:44px;height:44px;border-radius:12px;flex-shrink:0}
+.hist-info{flex:1;min-width:0}
+.hist-name{font-size:15px;font-weight:700;color:#f0e8ff;margin-bottom:4px}
+.hist-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.hist-pill{font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.1);color:#c8b8e8}
+.hist-time{font-size:11px;color:rgba(200,184,232,.5);margin-top:4px}
+.hist-bars{display:flex;gap:3px;align-items:flex-end;height:20px;margin-top:4px}
+.hist-bar{width:8px;border-radius:2px;min-height:3px}
+.hist-empty{text-align:center;padding:60px 20px;color:rgba(200,184,232,.5)}
+.hist-empty-icon{font-size:40px;margin-bottom:12px}
+.hist-empty-tip{font-size:14px;line-height:1.6}
 </style>
 </head>
 <body>
 <div id="app">
 
 <!-- WELCOME -->
-<section class="scene" id="welcome">
+<section class="scene" id="welcome" style="position:relative">
+  <!-- 历史记录入口（有记录时才显示） -->
+  <button id="btnHistEntry" class="hist-entry-btn hidden" aria-label="测评记录">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+    </svg>
+  </button>
   <!-- 挑战横幅（从挑战链接进来时显示） -->
   <div id="challengeBanner" class="challenge-banner hidden">
     <div class="cb-avatar" id="cbAvatar">L4</div>
@@ -649,6 +683,7 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 
   <div class="bottom-nav">
     <button class="btn btn-ghost" id="btnGallery2">查看图鉴</button>
+    <button class="btn btn-ghost" id="btnHistory">历史记录</button>
     <button class="btn btn-ghost" id="btnRetry">再测一次</button>
   </div>
 </section>
@@ -660,6 +695,16 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
   <p class="gal-sub">5 个等级 × 3 个角色 · 覆盖 OpenClaw 时代的全员档案。点击任意一张查看完整解读。</p>
   <div id="galSections"></div>
   <div style="margin-top:28px"><button class="btn btn-primary" id="btnStartFromGal">开始测试</button></div>
+</section>
+
+<!-- HISTORY -->
+<section class="scene hidden" id="history" style="padding:0">
+  <div class="top-bar">
+    <button class="btn btn-ghost btn-sm" id="btnHistBack">← 返回</button>
+    <span class="top-bar-title">测评记录</span>
+    <button class="btn btn-ghost btn-sm" id="btnHistClear">清空</button>
+  </div>
+  <div id="histList" class="hist-list"></div>
 </section>
 
 <!-- 分享海报 MODAL -->
@@ -1571,6 +1616,23 @@ function renderResult(){
   })();
 
   window.scrollTo(0,0);
+
+  // 保存到本地历史记录
+  HistoryStore.push({
+    id: Date.now(),
+    ts: new Date().toISOString(),
+    personaCode: p.code,
+    personaName: p.name,
+    level: p.level,
+    levelName: lv.name || p.level,
+    lvColor: lv.color || '#888',
+    role: p.role,
+    roleName: role.name,
+    rare: p.rare,
+    slogan: p.slogan,
+    scores: [...state.answers]
+  });
+  updateHistoryEntryPoint();
 }
 
 function openModal(code){
@@ -1597,11 +1659,70 @@ function openModal(code){
 }
 
 function go(id){
-  ['welcome','quiz','result','gallery'].forEach(s=>$(s).classList.add('hidden'));
+  ['welcome','quiz','result','gallery','history'].forEach(s=>$(s).classList.add('hidden'));
   $(id).classList.remove('hidden');
   window.scrollTo(0,0);
   // 离开欢迎页时停止 ticker 轮播，避免后台持续耗电
   if(id !== 'welcome' && state._tickerTimer){ clearInterval(state._tickerTimer); state._tickerTimer = null; }
+}
+
+// ===== 测评记录（localStorage） =====
+const HistoryStore = {
+  KEY: 'aibti_history',
+  MAX: 20,
+  load() {
+    try { return JSON.parse(localStorage.getItem(this.KEY) || '[]'); } catch(e) { return []; }
+  },
+  save(list) {
+    try { localStorage.setItem(this.KEY, JSON.stringify(list)); } catch(e) {}
+  },
+  push(record) {
+    const list = this.load();
+    list.unshift(record);
+    if (list.length > this.MAX) list.length = this.MAX;
+    this.save(list);
+  },
+  clear() { try { localStorage.removeItem(this.KEY); } catch(e) {} }
+};
+
+function updateHistoryEntryPoint() {
+  const btn = $('btnHistEntry');
+  if (!btn) return;
+  const list = HistoryStore.load();
+  if (list.length > 0) btn.classList.remove('hidden');
+  else btn.classList.add('hidden');
+}
+
+function renderHistory() {
+  const list = HistoryStore.load();
+  const container = $('histList');
+  if (!container) return;
+  if (list.length === 0) {
+    container.innerHTML = `<div class="hist-empty">
+      <div class="hist-empty-icon">📋</div>
+      <div class="hist-empty-tip">还没有测评记录<br>完成一次测评后会自动保存</div>
+    </div>`;
+    return;
+  }
+  container.innerHTML = list.map((r, i) => {
+    const d = new Date(r.ts);
+    const timeStr = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const barH = r.scores ? r.scores.slice(0, 6).map(s => Math.max(4, (s + 1) / 3 * 20)) : [10,10,10,10,10,10];
+    const bars = barH.map(h => `<div class="hist-bar" style="height:${h}px;background:${r.lvColor}99"></div>`).join('');
+    return `<div class="hist-card" data-idx="${i}">
+      <div class="hist-avatar-dot" style="background:${r.lvColor}22;border:2px solid ${r.lvColor}88"></div>
+      <div class="hist-info">
+        <div class="hist-name">${r.personaName}</div>
+        <div class="hist-meta">
+          <span class="hist-pill" style="color:${r.lvColor}">${r.levelName}</span>
+          <span class="hist-pill">${r.rare}</span>
+          <span class="hist-pill">${r.roleName}</span>
+        </div>
+        <div class="hist-bars">${bars}</div>
+        <div class="hist-time">${timeStr}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // 防御性事件绑定：元素不存在时静默跳过，避免 TypeError 中断脚本
@@ -1693,6 +1814,33 @@ on('btnShareImage', async ()=>{
 });
 on('btnCloseShare', ()=> $('shareModal').classList.add('hidden'));
 on('btnCopyShareText', ()=> { const b = $('btnShare'); if(b) b.click(); });
+
+/* 历史记录 */
+on('btnHistEntry', ()=> { renderHistory(); go('history'); });
+on('btnHistory',   ()=> { renderHistory(); go('history'); });
+on('btnHistBack',  ()=> go('welcome'));
+on('btnHistClear', ()=>{
+  if(confirm('确认清空所有测评记录？')) {
+    HistoryStore.clear();
+    updateHistoryEntryPoint();
+    renderHistory();
+  }
+});
+(function initHistDelegate(){
+  const el = $('histList');
+  if(!el) return;
+  el.addEventListener('click', function(e){
+    const card = e.target.closest('.hist-card');
+    if(!card) return;
+    const idx = +card.dataset.idx;
+    const list = HistoryStore.load();
+    const r = list[idx];
+    if(r) openModal(r.personaCode);
+  });
+})();
+
+// 初始化历史入口可见性
+updateHistoryEntryPoint();
 
 /* ===== Canvas 海报生成器 ===== */
 async function generatePoster(r) {
