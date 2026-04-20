@@ -1111,12 +1111,6 @@ const findP = code => PERSONAS.find(p=>p.code===code);
 const findLevel = code => LEVELS.find(l=>l.code===code);
 
 /* iOS 双击缩放防护：仅对卡片类元素阻止默认行为（.opt 是 button，touch-action:manipulation 已处理，不能 preventDefault 否则会吃掉 click） */
-document.addEventListener('touchend', function(e){
-  if(e.target.closest('.hot-card,.gal-card,.lv')){
-    e.preventDefault();
-  }
-}, {passive: false});
-
 /* ===== G-01/G-02 工具函数 ===== */
 function showToast(msg, ms=2200){
   let t = document.getElementById('globalToast');
@@ -1626,11 +1620,13 @@ function renderResult(){
     level: p.level,
     levelName: lv.name || p.level,
     lvColor: lv.color || '#888',
-    role: p.role,
     roleName: role.name,
     rare: p.rare,
     slogan: p.slogan,
-    scores: [...state.answers]
+    dimScores: {
+      PROMPT: scores.PROMPT, TOOLS: scores.TOOLS, SCENE: scores.SCENE,
+      TRUTH: scores.TRUTH, FLOW: scores.FLOW, FAITH: scores.FAITH
+    }
   });
   updateHistoryEntryPoint();
 }
@@ -1707,7 +1703,9 @@ function renderHistory() {
   container.innerHTML = list.map((r, i) => {
     const d = new Date(r.ts);
     const timeStr = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-    const barH = r.scores ? r.scores.slice(0, 6).map(s => Math.max(4, (s + 1) / 3 * 20)) : [10,10,10,10,10,10];
+    const barH = r.dimScores
+      ? ['PROMPT','TOOLS','SCENE','TRUTH','FLOW','FAITH'].map(k => Math.max(3, (r.dimScores[k] || 0) / 100 * 20))
+      : [10,10,10,10,10,10];
     const bars = barH.map(h => `<div class="hist-bar" style="height:${h}px;background:${r.lvColor}99"></div>`).join('');
     return `<div class="hist-card" data-idx="${i}">
       <div class="hist-avatar-dot" style="background:${r.lvColor}22;border:2px solid ${r.lvColor}88"></div>
@@ -1816,9 +1814,9 @@ on('btnCloseShare', ()=> $('shareModal').classList.add('hidden'));
 on('btnCopyShareText', ()=> { const b = $('btnShare'); if(b) b.click(); });
 
 /* 历史记录 */
-on('btnHistEntry', ()=> { renderHistory(); go('history'); });
-on('btnHistory',   ()=> { renderHistory(); go('history'); });
-on('btnHistBack',  ()=> go('welcome'));
+on('btnHistEntry', ()=> { state._histFrom='welcome'; renderHistory(); go('history'); });
+on('btnHistory',   ()=> { state._histFrom='result';  renderHistory(); go('history'); });
+on('btnHistBack',  ()=> go(state._histFrom || 'welcome'));
 on('btnHistClear', ()=>{
   if(confirm('确认清空所有测评记录？')) {
     HistoryStore.clear();
