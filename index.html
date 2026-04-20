@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0d0015">
-<meta name="description" content="AIBTI · 你是哪种 AI 打工人 · 阿里内部 AI 能力测评 · 18题4分钟测出你在 OpenClaw/御三家时代的真实段位">
+<meta name="description" content="AIBTI · 你是哪种 AI 打工人 · 阿里内部 AI 能力测评 · 12题3分钟测出你在 ideaClaw/御三家时代的真实段位">
 <meta property="og:title" content="AIBTI · 你是哪种 AI 打工人">
 <meta property="og:description" content="18题·4分钟·5个等级·15个人格·4岗位定制，测出你的 AI 段位">
 <meta property="og:type" content="website">
@@ -110,16 +110,16 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 @keyframes tickerSlide{0%,8%{transform:translateY(40px);opacity:0}15%,85%{transform:translateY(0);opacity:1}92%,100%{transform:translateY(-40px);opacity:0}}
 
 /* ── 职能选择 ── */
-.role-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.role-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .role{background:rgba(255,255,255,.05);border:1.5px solid var(--border);border-radius:14px;
-  padding:14px 4px;text-align:center;cursor:pointer;transition:all .2s;font-family:inherit;
+  padding:12px 2px;text-align:center;cursor:pointer;transition:all .2s;font-family:inherit;
   backdrop-filter:blur(10px)}
 .role.sel{background:rgba(168,85,247,.18);border-color:var(--p);
   box-shadow:0 0 0 3px rgba(168,85,247,.2);transform:scale(1.04)}
-.role-icon{font-size:13px;font-weight:700;color:var(--text-sec);margin-bottom:4px;display:block;
-  font-family:ui-monospace,Menlo,monospace;letter-spacing:.05em}
+.role-icon{font-size:11px;font-weight:700;color:var(--text-sec);margin-bottom:4px;display:block;
+  font-family:ui-monospace,Menlo,monospace;letter-spacing:.03em}
 .role.sel .role-icon{color:var(--p)}
-.role-name{font-size:11px;color:var(--text);font-weight:500}
+.role-name{font-size:10px;color:var(--text);font-weight:500}
 
 /* ── 段位阶梯 ── */
 .ladder{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
@@ -559,7 +559,7 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
 
   <div class="brand">A · I · B · T · I</div>
   <h1 class="title"><span class="line1">你是哪种</span><span class="line2">AI 打工人</span></h1>
-  <p class="subtitle">18 题 · 4 分钟 · 5 个等级 · 15 个角色 · 4 岗位定制题</p>
+  <p class="subtitle">12 题 · 3 分钟 · 5 个等级 · 15 个角色 · 5 岗位定制题</p>
 
   <!-- ① 职能前置 —— 最显眼位置 -->
   <div class="section-head" style="margin-top:6px"><span class="label">第一步 · 选你的职能</span></div>
@@ -568,6 +568,7 @@ body::after{content:'';position:fixed;bottom:-10%;left:-15%;width:50%;height:50%
     <div class="role" data-role="PD"><span class="role-icon">产品</span><span class="role-name">Product</span></div>
     <div class="role" data-role="DEV"><span class="role-icon">研发</span><span class="role-name">Engineer</span></div>
     <div class="role" data-role="BD"><span class="role-icon">商务</span><span class="role-name">Business</span></div>
+    <div class="role" data-role="SUP"><span class="role-icon">后台</span><span class="role-name">Support</span></div>
   </div>
 
   <!-- 实时数据（来自后端 API） -->
@@ -744,10 +745,11 @@ const DIMS = {
 };
 
 const ROLES = {
-  OPS:{name:'运营', ext:'比一般同款多一份「业务嗅觉 + ROI 焦虑」'},
-  PD: {name:'产品', ext:'比一般同款多一种「PRD 写到崩溃」的体验'},
-  DEV:{name:'研发', ext:'比一般同款多一股「凡事先看 GitHub」的执念'},
-  BD: {name:'商务', ext:'比一般同款多一份「AI 也得给我谈下来」的气场'}
+  OPS:{name:'运营',    ext:'比一般同款多一份「业务嗅觉 + ROI 焦虑」'},
+  PD: {name:'产品',    ext:'比一般同款多一种「PRD 写到崩溃」的体验'},
+  DEV:{name:'研发',    ext:'比一般同款多一股「凡事先看 GitHub」的执念'},
+  BD: {name:'商务',    ext:'比一般同款多一份「AI 也得给我谈下来」的气场'},
+  SUP:{name:'后台支持', ext:'比一般同款多一份「合规意识 + 流程严谨」换来的落地定力'}
 };
 
 const LEVELS = [
@@ -887,220 +889,313 @@ const PERSONAS = [
     advice:['把 Skill / Subagent 配方开源到 Aone Skill Hub，是真正的"AI 普惠"','尝试构建"自驱型 Agent"——给目标，让 AI 自己拆解 + 执行 + 反思','和 Anthropic 团队聊聊，你的实践值得反向输出']}
 ];
 
-/* ===== 18 QUESTIONS（v6 全新题库） ===== */
+/* ===== 12 QUESTIONS v2（5岗位 · 4共享+8变体） ===== */
 const QUESTIONS = [
-  // —— 前 6 题：暖场 ——
-  { tag:'WARM-UP', q:'凌晨 6 点你是被什么叫醒的？', opts:[
+
+  // Q1 WARM-UP · 共享
+  { tag:'WARM-UP', q:'凌晨 6 点，你是被什么叫醒的？', opts:[
+    {t:'脑子里突然蹦出"这个需求是不是 AI 能跑"，你已经病了', s:{FAITH:4,FLOW:2,LEVEL:5}},
+    {t:'老板钉钉，你也已经病了', s:{LEVEL:2,FAITH:1}},
     {t:'闹钟，你睡得很正常', s:{LEVEL:2}},
-    {t:'老板钉钉，你已经病了', s:{LEVEL:2,FAITH:1}},
-    {t:'脑子里突然蹦出"这个需求是不是能用 AI 跑"', s:{FAITH:4,FLOW:2,LEVEL:5}},
     {t:'还没醒，9 点闹钟没响完不起', s:{LEVEL:1,FAITH:-1}}
   ]},
 
-  { tag:'TOOL-STACK', q:'你日常挂着的 AI 工具数量？', opts:[
-    {t:'1 个，认准 ideaClaw / Claude 用到死', s:{FLOW:3,FAITH:1,LEVEL:3}},
+  // Q2 TOOL-STACK · 共享
+  { tag:'TOOL-STACK', q:'你日常"挂着的" AI 工具是几个？', opts:[
+    {t:'5 个全开：ideaClaw + QoderWork + 悟空 + Qoder CLI + Claude Code', s:{TOOLS:4,FAITH:2,LEVEL:4}},
     {t:'2-3 个，按场景切（写文 / 写码 / 取数）', s:{TOOLS:2,SCENE:2,FLOW:2,LEVEL:4}},
-    {t:'5 个全装：ideaClaw + QoderWork + 悟空 + Qoder CLI + Claude Code', s:{TOOLS:4,FAITH:2,LEVEL:4}},
+    {t:'1 个认准到底，ideaClaw / Claude 用到死', s:{FLOW:3,FAITH:1,LEVEL:3}},
     {t:'一个都没装，今天来云听课', s:{TOOLS:-2,FAITH:-2,LEVEL:1}}
   ]},
 
-  // ★ Q3 岗位变体
-  { tag:'SCENE', variants:{
-    OPS: { q:'老板钉钉群里发"上个月华东 vs 华南转化率"，你？', opts:[
-      {t:'转给小Q："数据在桌面运营周报，分析后发回"，2 分钟回复', s:{SCENE:3,FLOW:3,LEVEL:5}},
-      {t:'跑回工位打开 Excel 翻数据', s:{LEVEL:2}},
-      {t:'@数据同学帮忙跑一下', s:{LEVEL:2,FAITH:-1}},
-      {t:'装作没看见', s:{LEVEL:1,FAITH:-2}}
-    ]},
-    PD: { q:'老板钉钉群里发"那 Feature 影响面 + 竞品怎么做？"，你？', opts:[
-      {t:'转给小Q："拉一下竞品 + 我们历史数据，3 段对比"，几分钟回', s:{SCENE:3,FLOW:3,LEVEL:5}},
-      {t:'跑回工位翻 PRD + 上 SimilarWeb', s:{LEVEL:2}},
-      {t:'@运营同学一起拉个会聊', s:{LEVEL:2,FAITH:-1}},
-      {t:'先回个"在看，下午同步"', s:{LEVEL:1,FAITH:-2}}
-    ]},
-    DEV: { q:'老板钉钉群里发"线上 P0，先定位再说"，你？', opts:[
-      {t:'让 Claude Code 拉日志 + 调用栈，5 分钟出根因', s:{SCENE:3,FLOW:3,LEVEL:5}},
-      {t:'打开 IDE 翻最近变更', s:{LEVEL:2}},
-      {t:'@运维 / @同事一起排查', s:{LEVEL:2}},
-      {t:'手动 grep 日志找半天', s:{LEVEL:1,FAITH:-2}}
-    ]},
-    BD: { q:'老板钉钉群里发"那个客户的合同进度怎样？"，你？', opts:[
-      {t:'让小Q 远程拉桌面客户文件夹 + 总结进度', s:{SCENE:3,FLOW:3,LEVEL:5}},
-      {t:'跑回工位翻邮件和合同', s:{LEVEL:2}},
-      {t:'@商务助理帮忙整理一份', s:{LEVEL:2,FAITH:-1}},
-      {t:'先回个"晚点详细同步"', s:{LEVEL:1,FAITH:-2}}
-    ]}
-  }},
-
-  { tag:'TOOL-RECOG', q:'同事问"ideaClaw 是干嘛的"，你的反应？', opts:[
-    {t:'张嘴就讲：淘天集团业务技术部的 AI 中台产品，能写文档 / 建会议 / 收群消息', s:{TOOLS:3,FAITH:2,SCENE:1,LEVEL:4}},
-    {t:'"好像是阿里的某个 AI？"', s:{LEVEL:2}},
-    {t:'反问"你不知道？"（其实你也不知道）', s:{TOOLS:-1,LEVEL:1}},
-    {t:'我天天用，但说不清卖点', s:{FLOW:2,LEVEL:3}}
-  ]},
-
-  { tag:'SOCIAL', q:'群里有人晒"我用 AI 一晚上做了 X"，你的反应？', opts:[
-    {t:'直接私信："你 prompt 给我看看，我也试"', s:{FAITH:2,PROMPT:1,TOOLS:1,LEVEL:4}},
-    {t:'收藏，明天再说（永远不会再说）', s:{LEVEL:2}},
-    {t:'转发到自己群里："看，AI 多牛"', s:{FAITH:3,SCENE:1,LEVEL:3}},
-    {t:'怀疑：是不是夸张了', s:{FAITH:-2,TRUTH:1,LEVEL:3}}
-  ]},
-
-  { tag:'TOKEN', q:'你的 Token 焦虑是哪一种？', opts:[
-    {t:'不够用，群里求助贴常客', s:{FAITH:2,FLOW:2,TOOLS:2,LEVEL:4}},
-    {t:'用不完，找不到更多场景去消耗', s:{FAITH:3,FLOW:3,SCENE:2,LEVEL:5}},
-    {t:'走部门财务申请 team SK，Credits 总归够', s:{LEVEL:3}},
-    {t:'Token 是啥，可以吃吗', s:{TOOLS:-2,LEVEL:1}}
-  ]},
-
-  // —— 中 6 题：进阶 ——
+  // Q3 PROMPT · 共享
   { tag:'PROMPT', q:'你写 Prompt 的"排面"通常是？', opts:[
-    {t:'"总结一下" / "写个方案"', s:{PROMPT:-2,FAITH:1,LEVEL:2}},
-    {t:'三五句把背景 / 目标 / 输出格式说清', s:{PROMPT:2,FLOW:1,LEVEL:3}},
-    {t:'角色 / 上下文 / 约束 / few-shot 示例 / 输出格式 五件套', s:{PROMPT:4,FLOW:2,LEVEL:5}},
-    {t:'整篇文档丢进去："你看着办"', s:{PROMPT:-1,FAITH:2,LEVEL:2}}
+    {t:'角色 / 背景 / 约束 / few-shot 示例 / 输出格式——五件套起手', s:{PROMPT:4,FLOW:2,LEVEL:5}},
+    {t:'三五句把背景、目标、输出格式说清', s:{PROMPT:2,FLOW:1,LEVEL:3}},
+    {t:'整篇文档丢进去，"你看着办"', s:{PROMPT:-1,FAITH:2,LEVEL:2}},
+    {t:'"总结一下" / "写个方案"，没有更多', s:{PROMPT:-2,FAITH:1,LEVEL:2}}
   ]},
 
-  { tag:'TRUTH', q:'AI 给你一个看起来很对的数字 / 引用，你？', opts:[
-    {t:'必查，从不直接信', s:{TRUTH:4,LEVEL:4}},
+  // Q4 TRUTH · 共享
+  { tag:'TRUTH', q:'AI 给你一个"看起来很对"的数字 / 引用，你？', opts:[
+    {t:'让 AI 再自我核对一遍，然后还是不信，自己查', s:{TRUTH:3,LEVEL:4}},
+    {t:'必查，从不直接信——这是底线', s:{TRUTH:4,LEVEL:4}},
     {t:'凭直觉，明显离谱才查', s:{TRUTH:1,LEVEL:3}},
-    {t:'直接复制粘贴交差', s:{TRUTH:-3,FAITH:2,LEVEL:2}},
-    {t:'让 AI 自己再核对一遍就行', s:{TRUTH:-1,FAITH:2,LEVEL:2}}
+    {t:'直接复制粘贴交差——AI 说的还能有错？', s:{TRUTH:-3,FAITH:2,LEVEL:2}}
   ]},
 
-  // ★ Q9 岗位变体：你已经"完全交给 AI"的事
-  { tag:'AUTO', variants:{
-    OPS: { q:'下面哪件事你已经"完全交给 AI"做了？', opts:[
-      {t:'群消息分析 + 日报周报', s:{FLOW:3,SCENE:1,LEVEL:3}},
-      {t:'商家服务 FAQ + 群运营文案', s:{FLOW:3,SCENE:2,LEVEL:4}},
-      {t:'活动策划 + 用户调研提纲', s:{SCENE:3,PROMPT:2,LEVEL:4}},
-      {t:'还没有，AI 只辅助查资料', s:{FLOW:-2,LEVEL:2}}
+  // Q5 TOOL-RECOG · 角色变体（ideaClaw/OpenClaw 正确认知）
+  { tag:'TOOL-RECOG', variants:{
+    OPS: { q:'同事问"ideaClaw 用的什么内核"，你怎么答？', opts:[
+      {t:'OpenClaw 内核——不过 OpenClaw 不是淘天自研的，这个要分清', s:{TOOLS:4,TRUTH:2,SCENE:1,LEVEL:5}},
+      {t:'"阿里内部的 AI 办公助理，内核嘛……好像叫 OpenClaw？"', s:{TOOLS:2,LEVEL:3}},
+      {t:'"就是个 AI 工具吧，能帮写运营文案的那种"', s:{TOOLS:1,LEVEL:2}},
+      {t:'反问："你不知道？"（你其实也不确定）', s:{TOOLS:-1,LEVEL:1}}
     ]},
-    PD: { q:'下面哪件事你已经"完全交给 AI"做了？', opts:[
-      {t:'PRD 初稿 + 评审纪要', s:{FLOW:3,SCENE:1,LEVEL:3}},
-      {t:'竞品分析 + 用研提纲', s:{FLOW:3,SCENE:2,LEVEL:4}},
-      {t:'数据看板设计 + 数据分析', s:{SCENE:3,PROMPT:2,LEVEL:4}},
-      {t:'还没有，AI 只辅助查资料', s:{FLOW:-2,LEVEL:2}}
+    PD: { q:'同事问"ideaClaw 和普通 AI 有什么区别"，你怎么答？', opts:[
+      {t:'"它用 OpenClaw 内核，能接钉钉生态——但 OpenClaw 可不是淘天自研的"', s:{TOOLS:4,TRUTH:2,SCENE:1,LEVEL:5}},
+      {t:'"应该是阿里自己做的吧，功能比 ChatGPT 更适合内部"', s:{TOOLS:2,LEVEL:3}},
+      {t:'"能写 PRD、搞调研，具体内核我不太清楚"', s:{TOOLS:1,LEVEL:2}},
+      {t:'尬住，然后说"你去查一下"', s:{TOOLS:-1,LEVEL:1}}
     ]},
-    DEV: { q:'下面哪件事你已经"完全交给 AI"做了？', opts:[
-      {t:'代码 review + SQL + 单元测试', s:{FLOW:3,SCENE:1,LEVEL:3}},
-      {t:'技术方案 + 文档撰写', s:{FLOW:3,SCENE:2,LEVEL:4}},
-      {t:'调试 + 重构 + 性能优化', s:{SCENE:3,PROMPT:2,LEVEL:4}},
-      {t:'还没有，AI 只辅助查资料', s:{FLOW:-2,LEVEL:2}}
+    DEV: { q:'同事问"ideaClaw 底层是啥模型"，你怎么答？', opts:[
+      {t:'"OpenClaw 内核，注意 OpenClaw 不是淘天自研，别弄混了"', s:{TOOLS:4,TRUTH:2,SCENE:1,LEVEL:5}},
+      {t:'"我只知道它能调钉钉文档 MCP，底层我没研究"', s:{TOOLS:2,LEVEL:3}},
+      {t:'"大概是阿里云的模型？"', s:{TOOLS:1,LEVEL:2}},
+      {t:'"问我干嘛，我们 Dev 不用这玩意"', s:{TOOLS:-1,LEVEL:1}}
     ]},
-    BD: { q:'下面哪件事你已经"完全交给 AI"做了？', opts:[
-      {t:'客户跟进话术 + 商务文书', s:{FLOW:3,SCENE:1,LEVEL:3}},
-      {t:'合同审 + 报价单整理', s:{FLOW:3,SCENE:2,LEVEL:4}},
-      {t:'客户调研 + 行业分析', s:{SCENE:3,PROMPT:2,LEVEL:4}},
-      {t:'还没有，AI 只辅助查资料', s:{FLOW:-2,LEVEL:2}}
+    BD: { q:'客户问"ideaClaw 背后用的什么技术"，你怎么答？', opts:[
+      {t:'从容解释：OpenClaw 内核、阿里内部 AI 助理定位，顺带纠正"淘天自研"的误解', s:{TOOLS:4,TRUTH:2,SCENE:1,LEVEL:5}},
+      {t:'"阿里的 AI 系统，跟钉钉打通，很适合企业内部用"', s:{TOOLS:2,LEVEL:3}},
+      {t:'"挺好用的，内核我帮你问一下技术"', s:{TOOLS:1,LEVEL:2}},
+      {t:'含糊点头，转话题', s:{TOOLS:-1,LEVEL:1}}
+    ]},
+    SUP: { q:'HR 小伙伴问"ideaClaw 是阿里自己研发的吗"，你怎么答？', opts:[
+      {t:'"它用了 OpenClaw 内核，但 OpenClaw 不是淘天自研平台——这个要分清楚"', s:{TOOLS:4,TRUTH:2,SCENE:1,LEVEL:5}},
+      {t:'"应该是阿里内部的吧，具体我不太清楚"', s:{TOOLS:2,LEVEL:3}},
+      {t:'"反正是 AI 工具，能帮你写 JD 就完事"', s:{TOOLS:1,LEVEL:2}},
+      {t:'你自己也不知道，但点头说"是的"', s:{TOOLS:-1,TRUTH:-2,LEVEL:1}}
     ]}
   }},
 
-  { tag:'TRIO', q:'御三家（Claude / GPT / Gemini）你最常用？', opts:[
-    {t:'Claude，Anthropic 派，写代码 + 长文都靠它', s:{TOOLS:2,FAITH:2,LEVEL:4}},
-    {t:'GPT，老用户已肌肉记忆', s:{TOOLS:2,LEVEL:3}},
-    {t:'Gemini，1M Context + 多模态优势', s:{TOOLS:3,SCENE:1,LEVEL:4}},
-    {t:'国产为主：通义 / 豆包 / DeepSeek', s:{TOOLS:1,LEVEL:3}}
-  ]},
+  // Q6 SCENE · 角色变体（老板突发消息）
+  { tag:'SCENE', variants:{
+    OPS: { q:'下午两点老板群里@你："上个月华东 vs 华南转化率差多少，原因呢？"你？', opts:[
+      {t:'小Q 远程拉桌面运营周报 + AI 对比分析，3 分钟回复有数有因', s:{SCENE:4,FLOW:3,LEVEL:5}},
+      {t:'打开 ideaClaw 让它读上月数据，自己补原因判断', s:{SCENE:2,FLOW:2,LEVEL:4}},
+      {t:'跑回工位翻 Excel，@数据同学帮跑一下', s:{LEVEL:2}},
+      {t:'回个"在看，下午同步"先顶着', s:{LEVEL:1,FAITH:-2}}
+    ]},
+    PD: { q:'老板群里发"那个 Feature 的影响面 + 竞品怎么做的，现在"，你？', opts:[
+      {t:'AI 全自动：拉竞品资料 + 历史数据 + 输出三段对比，5 分钟交卷', s:{SCENE:4,FLOW:3,LEVEL:5}},
+      {t:'用 AI 出框架，自己填竞品细节和判断', s:{SCENE:2,FLOW:2,LEVEL:4}},
+      {t:'跑回工位翻 PRD + 上 SimilarWeb 手查', s:{LEVEL:2}},
+      {t:'先回个"稍等"，然后@运营同学一起拉个会', s:{LEVEL:1,FAITH:-2}}
+    ]},
+    DEV: { q:'老板群里发"线上 P0，先定位"，你？', opts:[
+      {t:'Claude Code 拉日志 + 调用栈，5 分钟给根因定位和临时方案', s:{SCENE:4,FLOW:3,LEVEL:5}},
+      {t:'AI 辅助读日志关键段，自己判断根因', s:{SCENE:2,FLOW:2,LEVEL:4}},
+      {t:'打开 IDE 翻最近变更，@运维一起排查', s:{LEVEL:2}},
+      {t:'手动 grep 日志，找到天黑', s:{LEVEL:1,FAITH:-2}}
+    ]},
+    BD: { q:'老板群里发"那个客户的合同进度怎么样了"，你？', opts:[
+      {t:'小Q 远程拉桌面客户文件夹 + 总结进度，两分钟清晰回复', s:{SCENE:4,FLOW:3,LEVEL:5}},
+      {t:'ideaClaw 帮我整理邮件记录，我加上自己对合同节点的判断', s:{SCENE:2,FLOW:2,LEVEL:4}},
+      {t:'跑回工位翻邮件和合同文件夹', s:{LEVEL:2}},
+      {t:'先回"晚点详细同步"，然后@商务助理', s:{LEVEL:1,FAITH:-2}}
+    ]},
+    SUP: { q:'老板群里@你："今年 HC 冻结政策原文是什么，有没有例外条款"，你？', opts:[
+      {t:'ideaClaw 读政策文档 + 提取条款 + 列出例外，3 分钟回复有据有判断', s:{SCENE:4,FLOW:3,LEVEL:5}},
+      {t:'AI 帮我定位文档关键章节，自己核对确认', s:{SCENE:2,FLOW:2,LEVEL:4}},
+      {t:'翻文件夹找 PDF，一条条看', s:{LEVEL:2}},
+      {t:'先回"我查一下"，然后找同事要文件', s:{LEVEL:1,FAITH:-2}}
+    ]}
+  }},
 
-  { tag:'KERNEL', q:'听到群里问"ideaClaw 内核为啥从 copaw 换成 OpenClaw"，你？', opts:[
-    {t:'张嘴就讲：copaw 是阿里云的，OpenClaw 是淘天升级版，能力起飞', s:{TOOLS:3,FAITH:2,LEVEL:5}},
-    {t:'跟着问"对啊，啥时候换的"', s:{LEVEL:3}},
-    {t:'换了？我没注意到', s:{LEVEL:2}},
-    {t:'不关心，能用就行', s:{LEVEL:1,FAITH:-1}}
-  ]},
+  // Q7 AI_CRISIS · 角色变体（高风险场景 AI 出错）
+  { tag:'AI_CRISIS', variants:{
+    OPS: { q:'AI 自动生成的活动文案发出去，才发现核心数据写错——下次你怎么办？', opts:[
+      {t:'建检查流程：AI 生成 → 数据字段自动核对 → 人工 sign-off 才发出', s:{TRUTH:3,FLOW:3,SCENE:2,LEVEL:5}},
+      {t:'数字类字段每次发前必须人工核对，AI 只管文风', s:{TRUTH:3,LEVEL:4}},
+      {t:'以后少用 AI 写含数据的文案，太危险', s:{TRUTH:2,FAITH:-2,LEVEL:2}},
+      {t:'删帖、道歉、发人工版——AI 这次背锅', s:{TRUTH:-1,FAITH:-1,LEVEL:2}}
+    ]},
+    PD: { q:'AI 生成的竞品分析报告，评审时被指出引用了一个不存在的功能——下次你怎么办？', opts:[
+      {t:'每条竞品功能描述必须附来源链接，AI 只出结构和语言，事实自己核对', s:{TRUTH:3,FLOW:3,SCENE:2,LEVEL:5}},
+      {t:'AI 出初稿，发之前拿竞品官网逐条比对', s:{TRUTH:3,LEVEL:4}},
+      {t:'竞品信息以后不用 AI，太容易编', s:{TRUTH:2,FAITH:-2,LEVEL:2}},
+      {t:'当场解释"AI 的问题"，尴尬结束评审', s:{TRUTH:-1,FAITH:-1,LEVEL:2}}
+    ]},
+    DEV: { q:'AI 推荐的依赖版本有已知 CVE，你直接合了 PR——下次你怎么办？', opts:[
+      {t:'CI 加 CVE 扫描，AI 的所有版本建议都过一遍漏洞库', s:{TRUTH:3,FLOW:3,SCENE:2,LEVEL:5}},
+      {t:'AI 推荐的版本必须人工查一次 CHANGELOG 和 CVE 库再合', s:{TRUTH:3,LEVEL:4}},
+      {t:'安全类操作以后绝不用 AI，问就是"不放心"', s:{TRUTH:2,FAITH:-2,LEVEL:2}},
+      {t:'提个紧急回滚，甩锅"AI 给错了"', s:{TRUTH:-1,FAITH:-1,LEVEL:2}}
+    ]},
+    BD: { q:'AI 生成的合同摘要漏了一个关键违约条款，你直接给客户用了——下次你怎么办？', opts:[
+      {t:'合同类文件 AI 出摘要 + 人工全文比对 + 法务 review——三步走，缺一不可', s:{TRUTH:3,FLOW:3,SCENE:2,LEVEL:5}},
+      {t:'合同关键条款（违约 / 知识产权 / 付款）必须人工核对，AI 只处理格式', s:{TRUTH:3,LEVEL:4}},
+      {t:'合同类以后都不用 AI，太高风险', s:{TRUTH:2,FAITH:-2,LEVEL:2}},
+      {t:'联系客户"我方更正一处表述"，默默改掉，下不为例', s:{TRUTH:-1,FAITH:-1,LEVEL:2}}
+    ]},
+    SUP: { q:'AI 帮你起草的劳动合同模板，发出去才发现引用了已失效的法律条款——下次你怎么办？', opts:[
+      {t:'法律文书 AI 起草 + 现行法规自动比对 + 法务 sign-off——一个都不能少', s:{TRUTH:3,FLOW:3,SCENE:2,LEVEL:5}},
+      {t:'模板里所有法条引用，必须人工核对现行版本后再用', s:{TRUTH:3,LEVEL:4}},
+      {t:'法律条款以后不用 AI，改回手查', s:{TRUTH:2,FAITH:-2,LEVEL:2}},
+      {t:'紧急收回、说"系统更新中"，悄悄改好', s:{TRUTH:-1,FAITH:-1,LEVEL:2}}
+    ]}
+  }},
 
-  // ★ Q12 岗位变体：装 N 用 N
+  // Q8 COLLAB · 角色变体（帮同事用 AI 完成任务）
+  { tag:'COLLAB', variants:{
+    OPS: { q:'隔壁运营小王说"帮我用 AI 写一个商家群公告"，你怎么做？', opts:[
+      {t:'让他说清楚活动名称、核心政策、目标商家调性——给他一个可复用的 Prompt 模板', s:{PROMPT:3,SCENE:2,FLOW:2,LEVEL:5}},
+      {t:'帮他写一条，顺便教他怎么调整语气', s:{PROMPT:2,SCENE:1,LEVEL:4}},
+      {t:'直接帮他写完发他，下次他还来找你', s:{PROMPT:1,LEVEL:3}},
+      {t:'"用 ideaClaw 啊，自己去试"，说完走了', s:{LEVEL:2}}
+    ]},
+    PD: { q:'产品新人问"帮我用 AI 出一份竞品分析框架"，你怎么做？', opts:[
+      {t:'给他讲竞品分析结构，帮他写一个带变量的 Prompt 模板让他自己跑', s:{PROMPT:3,SCENE:2,FLOW:2,LEVEL:5}},
+      {t:'帮他跑一遍，边做边讲思路', s:{PROMPT:2,SCENE:1,LEVEL:4}},
+      {t:'直接帮他做完，省时间', s:{PROMPT:1,LEVEL:3}},
+      {t:'"你自己去试一下 Claude，很好用的"，点到为止', s:{LEVEL:2}}
+    ]},
+    DEV: { q:'同事说"帮我用 AI 给这段代码写单元测试"，你怎么做？', opts:[
+      {t:'教他写 Prompt 指定语言框架、edge case 覆盖率要求，做成可复用模板', s:{PROMPT:3,SCENE:2,FLOW:2,LEVEL:5}},
+      {t:'帮他跑一遍，讲一下怎么让 AI 覆盖边界情况', s:{PROMPT:2,SCENE:1,LEVEL:4}},
+      {t:'直接帮他写完，10 分钟搞定', s:{PROMPT:1,LEVEL:3}},
+      {t:'"Claude Code 自己会的，你去试一下"', s:{LEVEL:2}}
+    ]},
+    BD: { q:'实习生说"帮我用 AI 写一封跟进客户的邮件"，你怎么做？', opts:[
+      {t:'让他填充客户背景、上次接触结果、本次诉求——给他一个客户跟进 Prompt 模板', s:{PROMPT:3,SCENE:2,FLOW:2,LEVEL:5}},
+      {t:'帮他生成一版，讲一下如何根据客户性格调整', s:{PROMPT:2,SCENE:1,LEVEL:4}},
+      {t:'直接帮他写完，反正快', s:{PROMPT:1,LEVEL:3}},
+      {t:'"ideaClaw 里有模板，你去找一下"，转身走了', s:{LEVEL:2}}
+    ]},
+    SUP: { q:'新入职 HRBP 说"帮我用 AI 写一个绩效面谈话术"，你怎么做？', opts:[
+      {t:'教她定义员工画像、面谈目标、输出结构——然后给一个可复用的 HR 场景 Prompt 模板', s:{PROMPT:3,SCENE:2,FLOW:2,LEVEL:5}},
+      {t:'帮她跑一版，一边讲怎么让 AI 语气更有温度', s:{PROMPT:2,SCENE:1,LEVEL:4}},
+      {t:'直接帮她写完发过去', s:{PROMPT:1,LEVEL:3}},
+      {t:'"用 ideaClaw 就好了"，甩个链接', s:{LEVEL:2}}
+    ]}
+  }},
+
+  // Q9 STACK-PATTERN · 角色变体（装 N 用 N）
   { tag:'STACK-PATTERN', variants:{
-    OPS: { q:'你的 AI 工具"装 vs 用"是哪种模式？', opts:[
-      {t:'装 1 用 1：ideaClaw 一个走天下', s:{FLOW:3,LEVEL:3}},
-      {t:'装 3 用 3：写文 / 取数 / 看板各一', s:{TOOLS:2,FLOW:2,LEVEL:4}},
-      {t:'装 5 用 1：仰卧起坐典型', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
-      {t:'装 0 用 0：人肉打天下', s:{TOOLS:-2,LEVEL:1}}
+    OPS: { q:'你的 AI 工具"装 vs 实际用"是哪种画风？', opts:[
+      {t:'装 5 用 5：悟空 / ideaClaw / QoderWork / Claude / 取数 CLI，场景全覆盖', s:{TOOLS:4,FLOW:4,LEVEL:5}},
+      {t:'装 3 用 3：写文 / 数据分析 / 群运营各一', s:{TOOLS:2,FLOW:2,LEVEL:4}},
+      {t:'装 5 用 1：收集爱好者，实际只开 ideaClaw', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
+      {t:'装 0 用 0：人肉运营，Excel 是唯一信仰', s:{TOOLS:-2,LEVEL:1}}
     ]},
-    PD: { q:'你的 AI 工具"装 vs 用"是哪种模式？', opts:[
-      {t:'装 1 用 1：QoderWork 走 PRD + 用研全流程', s:{FLOW:3,LEVEL:3}},
-      {t:'装 3 用 3：PRD / 调研 / 方案各一', s:{TOOLS:2,FLOW:2,LEVEL:4}},
-      {t:'装 5 用 1：好奇心爆棚但落地为零', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
-      {t:'装 0 用 0：传统 PD 一名', s:{TOOLS:-2,LEVEL:1}}
+    PD: { q:'你的 AI 工具"装 vs 实际用"是哪种画风？', opts:[
+      {t:'装 5 用 5：PRD / 竞品 / 用研 / 数据分析 / 设计辅助，全套跑通', s:{TOOLS:4,FLOW:4,LEVEL:5}},
+      {t:'装 3 用 3：PRD 工具 / 竞品分析 / 会议纪要各一', s:{TOOLS:2,FLOW:2,LEVEL:4}},
+      {t:'装 5 用 1：好奇心满点，落地为零', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
+      {t:'装 0 用 0：传统 PD，Notion + 脑图走天下', s:{TOOLS:-2,LEVEL:1}}
     ]},
-    DEV: { q:'你的 AI 工具"装 vs 用"是哪种模式？', opts:[
-      {t:'装 1 用 1：Claude Code 一个搞定', s:{FLOW:3,LEVEL:3}},
-      {t:'装 3 用 3：Coding / 调试 / 文档分工', s:{TOOLS:2,FLOW:2,LEVEL:4}},
-      {t:'装 5 用 1：试遍后退回 ChatGPT', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
-      {t:'装 0 用 0：Vim + 手撸', s:{TOOLS:-2,LEVEL:1}}
+    DEV: { q:'你的 AI 工具"装 vs 实际用"是哪种画风？', opts:[
+      {t:'装 5 用 5：Claude Code / Copilot / Qoder CLI / 文档生成 / SQL 助手，全部在 pipeline 里', s:{TOOLS:4,FLOW:4,LEVEL:5}},
+      {t:'装 3 用 3：coding / 调试 / 文档写作分工明确', s:{TOOLS:2,FLOW:2,LEVEL:4}},
+      {t:'装 5 用 1：试了一圈最后退回 ChatGPT 网页版', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
+      {t:'装 0 用 0：Vim + 手撸，拒绝一切语法糖', s:{TOOLS:-2,LEVEL:1}}
     ]},
-    BD: { q:'你的 AI 工具"装 vs 用"是哪种模式？', opts:[
-      {t:'装 1 用 1：ideaClaw 处理客户 + 文书', s:{FLOW:3,LEVEL:3}},
-      {t:'装 3 用 3：客户分析 / 合同审 / 报价分工', s:{TOOLS:2,FLOW:2,LEVEL:4}},
-      {t:'装 5 用 1：装一堆没真用过', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
-      {t:'装 0 用 0：Excel 走天下', s:{TOOLS:-2,LEVEL:1}}
+    BD: { q:'你的 AI 工具"装 vs 实际用"是哪种画风？', opts:[
+      {t:'装 5 用 5：客户分析 / 合同审 / 报价生成 / 拜访纪要 / 方案 PPT，全部 AI 接管', s:{TOOLS:4,FLOW:4,LEVEL:5}},
+      {t:'装 3 用 3：客户文书 / 合同整理 / 行业分析', s:{TOOLS:2,FLOW:2,LEVEL:4}},
+      {t:'装 5 用 1：装一堆没真用，见客户还是 PPT 自己做', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
+      {t:'装 0 用 0：Excel + 电话，关系才是生产力', s:{TOOLS:-2,LEVEL:1}}
+    ]},
+    SUP: { q:'你的 AI 工具"装 vs 实际用"是哪种画风？', opts:[
+      {t:'装 5 用 5：JD 生成 / 合同审阅 / 绩效分析 / 政策问答 / 预算报表，全部跑通', s:{TOOLS:4,FLOW:4,LEVEL:5}},
+      {t:'装 3 用 3：HR 文档 / 法律合规 / 财务分析各一', s:{TOOLS:2,FLOW:2,LEVEL:4}},
+      {t:'装 5 用 1：装了一圈，只开 ideaClaw 写 JD', s:{TOOLS:3,FLOW:-1,LEVEL:3}},
+      {t:'装 0 用 0：Word 模板 + 人工审，省心', s:{TOOLS:-2,LEVEL:1}}
     ]}
   }},
 
-  // —— 后 6 题：高阶 ——
-  { tag:'OPENCLAW', q:'听到 OpenClaw 你想到的是？', opts:[
-    {t:'淘天自研的 AI 引擎，ideaClaw 从阿里云 copaw 换到它后我已上 Skill', s:{FLOW:3,PROMPT:2,LEVEL:5}},
-    {t:'阿里集团内部的 AI 内核产品，对标 Claude Code 系列', s:{TOOLS:2,FAITH:1,LEVEL:4}},
-    {t:'听过名字，没研究', s:{LEVEL:3}},
-    {t:'是 Claude 的某个新产品吗？', s:{LEVEL:1}}
-  ]},
+  // Q10 SOCIAL · 角色变体（群里 AI 刷屏的反应）
+  { tag:'SOCIAL', variants:{
+    OPS: { q:'运营群里有人晒"我用 AI 一夜写了 30 条爆款文案"，你？', opts:[
+      {t:'私信要 Prompt，测一下能不能用在我的场景', s:{FAITH:2,PROMPT:2,TOOLS:1,LEVEL:4}},
+      {t:'转发到自己的子群，"来学学人家"', s:{FAITH:2,SCENE:1,LEVEL:3}},
+      {t:'收藏，等哪天有空试试（可能永远没空）', s:{LEVEL:2}},
+      {t:'怀疑：30 条？质量保证吗', s:{FAITH:-1,TRUTH:2,LEVEL:3}}
+    ]},
+    PD: { q:'产品群里有人晒"AI 三天出了完整 PRD + 竞品分析"，你？', opts:[
+      {t:'私信追问工具链 + Prompt，看能不能复刻到我的项目', s:{FAITH:2,PROMPT:2,TOOLS:1,LEVEL:4}},
+      {t:'转发到组里，"这是新标准，一起研究"', s:{FAITH:2,SCENE:1,LEVEL:3}},
+      {t:'收藏，明天再说（明天也不会看）', s:{LEVEL:2}},
+      {t:'"PRD 三天？逻辑和细节靠谱吗？"', s:{FAITH:-1,TRUTH:2,LEVEL:3}}
+    ]},
+    DEV: { q:'技术群里有人晒"Claude Code 自己写完了整个 CRUD 模块"，你？', opts:[
+      {t:'私信要 repo 链接 + system prompt，自己跑一遍看效果', s:{FAITH:2,PROMPT:2,TOOLS:1,LEVEL:4}},
+      {t:'@组内所有人：这个我们也得试', s:{FAITH:2,SCENE:1,LEVEL:3}},
+      {t:'收藏截图，继续写我的代码', s:{LEVEL:2}},
+      {t:'"CRUD 而已，有没有处理 edge case？测试怎么写的？"', s:{FAITH:-1,TRUTH:2,LEVEL:3}}
+    ]},
+    BD: { q:'商务群里有人晒"AI 帮我赢了一个百万合同"，你？', opts:[
+      {t:'私信：方案怎么做的？提案里 AI 出了哪部分？', s:{FAITH:2,PROMPT:2,TOOLS:1,LEVEL:4}},
+      {t:'转发给老板，"AI 赋能业务，我们也可以"', s:{FAITH:2,SCENE:1,LEVEL:3}},
+      {t:'觉得挺厉害，收藏，没有下文', s:{LEVEL:2}},
+      {t:'怀疑：合同百万，AI 真的帮了这么多吗', s:{FAITH:-1,TRUTH:2,LEVEL:3}}
+    ]},
+    SUP: { q:'HR 群里有人晒"AI 帮我一天搞定了 20 个岗位的 JD + 面试题"，你？', opts:[
+      {t:'私信要 Prompt，测一下能不能用在我们的招聘场景', s:{FAITH:2,PROMPT:2,TOOLS:1,LEVEL:4}},
+      {t:'转发到 HRBP 群，"这个我们可以试试"', s:{FAITH:2,SCENE:1,LEVEL:3}},
+      {t:'收藏，改天有空研究（大概率不会）', s:{LEVEL:2}},
+      {t:'"20 个 JD？符合我们公司岗位要求吗，合规性呢"', s:{FAITH:-1,TRUTH:2,LEVEL:3}}
+    ]}
+  }},
 
-  { tag:'CONTEXT', q:'听到 1M Context Window 你想到的是？', opts:[
-    {t:'终于可以一次塞进整个 repo 做架构 review', s:{FLOW:2,SCENE:2,LEVEL:5}},
-    {t:'又有新模型？哪家发的', s:{TOOLS:1,LEVEL:4}},
-    {t:'1M 是百万 token，处理长文有用', s:{LEVEL:3}},
-    {t:'Context 是啥', s:{LEVEL:1}}
-  ]},
+  // Q11 AUTO · 角色变体（完全交给 AI 做的事）
+  { tag:'AUTO', variants:{
+    OPS: { q:'下面哪件运营工作，你已经"完全交给 AI 跑"了？', opts:[
+      {t:'商家群消息汇总 + 日报 + 周报——AI 全自动，我只做 exception 判断', s:{FLOW:4,SCENE:3,LEVEL:5}},
+      {t:'活动文案初稿 + 用户问题分类——AI 出，我改', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'数据查询 + 周报格式——AI 辅助，核心判断我来', s:{FLOW:2,LEVEL:3}},
+      {t:'还没有，AI 顶多是个高级搜索', s:{FLOW:-2,LEVEL:2}}
+    ]},
+    PD: { q:'下面哪件产品工作，你已经"完全交给 AI 跑"了？', opts:[
+      {t:'竞品追踪 + 用研整理 + 需求优先级框架——AI 全自动输出，我做决策', s:{FLOW:4,SCENE:3,LEVEL:5}},
+      {t:'PRD 初稿 + 评审纪要——AI 生成，我修订', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'会议记录 + 待办整理——AI 辅助', s:{FLOW:2,LEVEL:3}},
+      {t:'还没有，AI 只是高级 Google', s:{FLOW:-2,LEVEL:2}}
+    ]},
+    DEV: { q:'下面哪件研发工作，你已经"完全交给 AI 跑"了？', opts:[
+      {t:'代码 review + 单元测试 + 技术方案初稿——AI 全流程，我做架构决策', s:{FLOW:4,SCENE:3,LEVEL:5}},
+      {t:'SQL 写 + 文档生成——AI 出，我核对', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'调试辅助 + 报错解读——AI 帮查，我判断', s:{FLOW:2,LEVEL:3}},
+      {t:'还没有，AI 只是高级 Stack Overflow', s:{FLOW:-2,LEVEL:2}}
+    ]},
+    BD: { q:'下面哪件商务工作，你已经"完全交给 AI 跑"了？', opts:[
+      {t:'客户情报整理 + 提案框架 + 合同条款风险扫描——AI 全程，我负责判断和谈判', s:{FLOW:4,SCENE:3,LEVEL:5}},
+      {t:'跟进话术 + 报价单初版——AI 生成，我调整', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'行业报告摘要 + 拜访纪要整理——AI 辅助', s:{FLOW:2,LEVEL:3}},
+      {t:'还没有，客户关系这种事 AI 不懂', s:{FLOW:-2,LEVEL:2}}
+    ]},
+    SUP: { q:'下面哪件后台工作，你已经"完全交给 AI 跑"了？', opts:[
+      {t:'JD 批量生成 + 合同条款核查 + 绩效分析报告——AI 全自动，我做最终审核', s:{FLOW:4,SCENE:3,LEVEL:5}},
+      {t:'员工手册章节初稿 + 政策 FAQ 整理——AI 出，我审', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'简历筛选关键词 + 费用报销格式核查——AI 辅助', s:{FLOW:2,LEVEL:3}},
+      {t:'还没有，HR / 法务 / 财务的文件要自己看，不放心', s:{FLOW:-2,LEVEL:2}}
+    ]}
+  }},
 
-  { tag:'SKILL-MCP', q:'Skill / MCP / ODPSCMD 你能玩到哪一步？', opts:[
-    {t:'写过自己的 Skill（如 ODPSCMD 自然语言取数），挂 Aone Skill Hub', s:{FLOW:3,PROMPT:2,LEVEL:5}},
-    {t:'配过钉钉文档 / AI 表格 MCP，让 AI 直接读写钉钉文档', s:{TOOLS:2,FLOW:2,LEVEL:4}},
-    {t:'装过别人写的 Skill 用，自己没配过', s:{LEVEL:3}},
-    {t:'MCP / Skill / ODPS 都没听过', s:{LEVEL:1}}
-  ]},
-
-  { tag:'BU-CULTURE', q:'看到 BU 内部 AI 主题课通知，你？', opts:[
-    {t:'第一时间报名，带问题做笔记去', s:{FAITH:3,SCENE:2,FLOW:1,LEVEL:4}},
-    {t:'报名了，等录播', s:{FAITH:0,LEVEL:3}},
-    {t:'有时间再说', s:{LEVEL:2}},
-    {t:'群里 200 条 AI 讨论，一条没看', s:{LEVEL:1,FAITH:-2}}
-  ]},
-
-  // ★ Q17 岗位变体：典型工作流
+  // Q12 WORKFLOW · 角色变体（最深度工作流）
   { tag:'WORKFLOW', variants:{
-    OPS: { q:'你处理 200+ 商家群消息的方式？', opts:[
-      {t:'悟空 DWS 命令收群 → AI 分析 → 配 MCP 自动写入钉钉文档日报', s:{FLOW:4,SCENE:3,LEVEL:5}},
-      {t:'ideaClaw 在钉钉里直接读群 → 简单总结', s:{FLOW:2,LEVEL:4}},
-      {t:'一条条复制到 AI 让它总结', s:{LEVEL:3}},
-      {t:'一条条人工看', s:{FLOW:-2,LEVEL:1}}
+    OPS: { q:'你处理 200+ 商家群消息的方式是？', opts:[
+      {t:'悟空 DWS 命令收群 → AI 分类 + 分析 → MCP 自动写入钉钉文档日报，人工只处理 exception', s:{FLOW:5,SCENE:4,PROMPT:2,LEVEL:5}},
+      {t:'ideaClaw 在钉钉里读群 → 简单总结 → 人工补判断', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'批量复制消息 → 丢进 AI 让它归类 → 自己写日报', s:{FLOW:2,LEVEL:3}},
+      {t:'一条条人工看，做备忘录', s:{FLOW:-3,LEVEL:1}}
     ]},
-    PD: { q:'你出竞品分析报告的方式？', opts:[
-      {t:'AI 全自动：抓数据 → 比较 → 写洞察 → 发钉钉文档', s:{FLOW:4,SCENE:3,LEVEL:5}},
-      {t:'AI 出框架，自己填充', s:{FLOW:2,LEVEL:4}},
-      {t:'AI 帮我总结别人的报告', s:{LEVEL:3}},
-      {t:'自己写，AI 不参与', s:{FLOW:-2,LEVEL:1}}
+    PD: { q:'你出竞品分析报告的方式是？', opts:[
+      {t:'AI 全自动：抓竞品动态 → 对比维度分析 → 写洞察 → 推送钉钉文档，定期更新', s:{FLOW:5,SCENE:4,PROMPT:2,LEVEL:5}},
+      {t:'AI 出结构框架，我填竞品数据和判断', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'AI 帮我总结别人的分析报告', s:{FLOW:2,LEVEL:3}},
+      {t:'自己看官网 + 写报告，AI 不参与', s:{FLOW:-3,LEVEL:1}}
     ]},
-    DEV: { q:'你做技术调研的方式？', opts:[
-      {t:'Claude Code 自己拉 repo + 读代码 + 出方案', s:{FLOW:4,SCENE:3,LEVEL:5}},
-      {t:'AI 帮分析关键模块，自己整合', s:{FLOW:2,LEVEL:4}},
-      {t:'AI 帮搜文档', s:{LEVEL:3}},
-      {t:'自己 Google + 看源码', s:{FLOW:-2,LEVEL:1}}
+    DEV: { q:'你做技术选型调研的方式是？', opts:[
+      {t:'Claude Code 拉 repo + 读代码 + 对比方案 + 出决策文档，一套下来 AI 全跑', s:{FLOW:5,SCENE:4,PROMPT:2,LEVEL:5}},
+      {t:'AI 分析核心模块，自己整合技术判断', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'AI 帮搜文档、翻 issue', s:{FLOW:2,LEVEL:3}},
+      {t:'Google + 看源码 + 问老同事，AI 不在工具链里', s:{FLOW:-3,LEVEL:1}}
     ]},
-    BD: { q:'你跟进客户合同的方式？', opts:[
-      {t:'小Q 远程改 PPT + AI 审条款 + 自动发回钉钉', s:{FLOW:4,SCENE:3,LEVEL:5}},
-      {t:'AI 帮改 PPT，合同自己审', s:{FLOW:2,LEVEL:4}},
-      {t:'AI 帮搜模板', s:{LEVEL:3}},
-      {t:'全程手工', s:{FLOW:-2,LEVEL:1}}
+    BD: { q:'你跟进一个大客户从接触到签合同的方式是？', opts:[
+      {t:'AI 整理客户情报 → 生成提案框架 → 审合同条款 → 自动生成拜访纪要 → 一套走完', s:{FLOW:5,SCENE:4,PROMPT:2,LEVEL:5}},
+      {t:'AI 帮改方案 PPT + 合同格式，关键谈判节点自己跟', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'AI 帮找行业背景资料', s:{FLOW:2,LEVEL:3}},
+      {t:'全程人工，见面才是生产力', s:{FLOW:-3,LEVEL:1}}
+    ]},
+    SUP: { q:'你处理一批新入职员工的档案和手续的方式是？', opts:[
+      {t:'AI 解析入职材料 → 核对合规字段 → 生成劳动合同条款摘要 → 推送 HRBP 待办，人工 sign-off', s:{FLOW:5,SCENE:4,PROMPT:2,LEVEL:5}},
+      {t:'AI 帮核对格式和必填字段，手续确认我来', s:{FLOW:3,SCENE:2,LEVEL:4}},
+      {t:'AI 帮生成标准话术和通知邮件', s:{FLOW:2,LEVEL:3}},
+      {t:'每一份材料人工看一遍，确保万无一失', s:{FLOW:-3,LEVEL:1}}
     ]}
-  }},
+  }}
 
-  { tag:'TROUBLESHOOT', q:'下面 3 个 AI 工具卡点你"一秒就懂解法"的有几个？', opts:[
-    {t:'三个都懂：悟空多组织授权 / 钉钉文档 MCP 没权限选错组织 / QoderWork 企业专属等打标', s:{FLOW:3,TOOLS:3,LEVEL:5}},
-    {t:'懂 1-2 个，剩下要查文档', s:{TOOLS:2,LEVEL:4}},
-    {t:'听过这些坑，没具体踩过', s:{LEVEL:3}},
-    {t:'这些都是啥东西', s:{LEVEL:1}}
-  ]}
 ];
 
 /* ===== HELPERS ===== */
@@ -1408,7 +1503,7 @@ let state = {
     const allOpts = qBody.querySelectorAll('.opt');
     allOpts.forEach(x=>{ x.classList.remove('sel'); x.disabled = true; });
     opt.classList.add('sel');
-    state.answers[state.idx] = +opt.dataset.i;
+    state.answers[state.idx] = +opt.dataset.si;
     setTimeout(()=>{
       allOpts.forEach(x=>{ x.disabled = false; });
       if(state.idx < QUESTIONS.length - 1){
@@ -1431,13 +1526,14 @@ function renderQuestion(){
   $('barFill').style.width = ((i+1)/QUESTIONS.length*100)+'%';
   $('barNum').textContent = (i+1)+' / '+QUESTIONS.length;
 
-  const opts = c.opts.map((o,j)=>{
-    const letter = ['A','B','C','D'][j];
-    return `<button class="opt" data-i="${j}">
-      <span class="opt-letter">${letter}</span>
-      <span>${o.t}</span>
-    </button>`;
-  }).join('');
+  const order = c.opts.map((_,i)=>i).sort(()=>Math.random()-.5);
+  const letters = ['A','B','C','D'];
+  const opts = order.map((si,di)=>
+    `<button class="opt" data-si="${si}">
+      <span class="opt-letter">${letters[di]}</span>
+      <span>${c.opts[si].t}</span>
+    </button>`
+  ).join('');
 
   const roleTag = isVariant ? `<span class="role-tag">${ROLES[state.role].name}专属</span>` : '';
   $('qBody').innerHTML = `
